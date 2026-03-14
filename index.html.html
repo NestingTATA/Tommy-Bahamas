@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Tommy Bahamas · Control de Corte</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --red:#C00000; --red-d:#8f0000; --red-l:#e84040; --red-bg:#fff0f0; --red-border:#f5c6c6;
+  --gray:#6b7280; --gray-l:#9ca3af; --gray-xl:#f3f4f6; --gray-xxl:#fafafa;
+  --bg:#f5f5f5; --bg2:#ffffff; --bg3:#f0f0f0; --bg4:#e8e8e8;
+  --border:#e5e7eb; --border2:#d1d5db;
+  --text:#111827; --text2:#374151; --text3:#6b7280;
+  --green:#16a34a; --green-bg:#f0fdf4; --green-border:#bbf7d0;
+  --amber:#d97706; --amber-bg:#fffbeb;
+  --blue:#2563eb;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.05);
+  --shadow-lg:0 10px 25px rgba(0,0,0,.1),0 4px 6px rgba(0,0,0,.05);
+}
+
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overscroll-behavior:none;}
+.mono{font-family:'JetBrains Mono',monospace;}
+input,button,select,textarea{font-family:'Inter',sans-serif;}
+button:focus,input:focus,select:focus{outline:none;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg3);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* ── Animations ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.anim-pop{animation:pop .2s ease;}
+.anim-shake{animation:shake .35s ease;}
+.anim-slide{animation:slideDown .25s ease;}
+.anim-up{animation:fadeUp .3s ease;}
+
+/* ── Layout ── */
+.screen{display:none;}
+.screen.active{display:block;}
+#app{min-height:100vh;}
+
+/* ── Header ── */
+.app-header{
+  background:var(--bg2);
+  border-bottom:3px solid var(--red);
+  padding:12px 20px;
+  display:flex;justify-content:space-between;align-items:center;
+  position:sticky;top:0;z-index:200;
+  box-shadow:var(--shadow);
+}
+.logo-area{display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;}
+.logo-dot{width:32px;height:32px;background:var(--red);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.logo-dot span{color:#fff;font-weight:800;font-size:16px;}
+.logo-text-main{font-size:14px;font-weight:800;color:var(--text);letter-spacing:-.3px;}
+.logo-text-sub{font-size:10px;color:var(--text3);letter-spacing:.05em;font-family:'JetBrains Mono',monospace;}
+
+/* ── Cards ── */
+.card{background:var(--bg2);border-radius:12px;border:1px solid var(--border);padding:20px;box-shadow:var(--shadow);}
+.card-sm{background:var(--bg2);border-radius:10px;border:1px solid var(--border);padding:14px;box-shadow:var(--shadow);}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:600;border-radius:8px;cursor:pointer;transition:all .15s;border:none;font-size:14px;padding:10px 18px;}
+.btn-primary{background:var(--red);color:#fff;}
+.btn-primary:hover{background:var(--red-d);}
+.btn-primary:active{transform:scale(.98);}
+.btn-secondary{background:var(--bg3);color:var(--text2);border:1px solid var(--border2);}
+.btn-secondary:hover{background:var(--bg4);}
+.btn-ghost{background:transparent;color:var(--text3);border:1px solid var(--border);}
+.btn-ghost:hover{background:var(--bg3);}
+.btn-green{background:var(--green);color:#fff;}
+.btn-green:hover{background:#15803d;}
+.btn-lg{font-size:16px;padding:14px 24px;border-radius:10px;width:100%;}
+.btn-full{width:100%;}
+
+/* ── Inputs ── */
+.inp{width:100%;background:var(--bg2);border:1.5px solid var(--border2);border-radius:8px;padding:12px 14px;color:var(--text);font-size:15px;transition:border-color .15s;}
+.inp:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(192,0,0,.08);}
+.inp-xl{font-size:22px;padding:16px;font-family:'JetBrains Mono',monospace;text-align:center;letter-spacing:.08em;border-radius:10px;}
+.inp-center{text-align:center;}
+.inp-num{font-size:20px;padding:14px;text-align:center;font-family:'JetBrains Mono',monospace;}
+.lbl{display:block;font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;}
+
+/* ── Alert banner ── */
+#alert-box{
+  position:fixed;top:68px;left:50%;transform:translateX(-50%);
+  z-index:999;padding:12px 20px;border-radius:10px;
+  font-size:13px;font-weight:600;text-align:center;
+  max-width:92vw;min-width:280px;
+  box-shadow:var(--shadow-lg);display:none;pointer-events:none;
+}
+
+/* ── Progress bar ── */
+.prog-bg{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:3px;transition:width .6s ease;}
+
+/* ── Badge ── */
+.badge{display:inline-block;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;padding:2px 8px;border-radius:4px;letter-spacing:.05em;}
+.badge-black{background:#1f2937;color:#e5e7eb;}
+.badge-brown{background:#451a03;color:#fde68a;}
+.badge-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+.badge-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);}
+.badge-gray{background:var(--bg3);color:var(--text3);border:1px solid var(--border);}
+
+/* ── Tables ── */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;padding:9px 12px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;background:var(--bg3);}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:middle;}
+.tbl tr:hover td{background:var(--gray-xxl);}
+.tbl tr.row-green td{background:#f0fdf4;}
+.tbl tr.row-red td{background:#fff0f0;}
+.tbl tr.row-green:hover td{background:#dcfce7;}
+.tbl tr.row-red:hover td{background:#ffd7d7;}
+
+/* ── Tabs (supervisor) ── */
+.tabs{display:flex;border-bottom:2px solid var(--border);background:var(--bg2);overflow-x:auto;}
+.tab-btn{background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text3);padding:12px 18px;white-space:nowrap;transition:all .15s;letter-spacing:.02em;}
+.tab-btn.active{color:var(--red);border-bottom-color:var(--red);}
+.tab-btn:hover:not(.active){color:var(--text2);background:var(--gray-xl);}
+
+/* ── Rendimiento color ── */
+.rend-green{color:var(--green);font-weight:700;}
+.rend-red{color:var(--red);font-weight:700;}
+.rend-normal{color:var(--text2);font-weight:600;}
+
+/* ── Rend bar ── */
+.rend-bar{display:flex;align-items:center;gap:8px;min-width:120px;}
+.rend-bar .prog-bg{flex:1;}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal-box{background:var(--bg2);border-radius:16px;padding:28px;max-width:420px;width:100%;box-shadow:var(--shadow-lg);animation:pop .2s ease;}
+
+/* ── Upload zone ── */
+.upload-zone{border:2px dashed var(--border2);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--red);background:var(--red-bg);}
+
+/* ── Spinner ── */
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+.spinner-dark{border-color:rgba(0,0,0,.15);border-top-color:var(--red);}
+
+/* ── Note box ── */
+.note{background:var(--amber-bg);border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:12px;color:var(--amber);}
+.note-red{background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--red);}
+.note-green{background:var(--green-bg);border:1px solid var(--green-border);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--green);}
+
+/* ── KPI card ── */
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;box-shadow:var(--shadow);}
+.kpi-label{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;}
+.kpi-value{font-size:30px;font-weight:800;font-family:'JetBrains Mono',monospace;line-height:1;}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:4px;}
+
+/* ── Supervisor hidden access ── */
+#sup-key-modal{display:none;}
+
+/* ── Block screen (rendimiento >100%) ── */
+#block-screen{display:none;position:fixed;inset:0;background:rgba(192,0,0,.95);z-index:600;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px;color:#fff;}
+#block-screen.show{display:flex;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ══════════════════════════════════════════════
+     HEADER (visible en todas las vistas)
+══════════════════════════════════════════════ -->
+<header class="app-header" id="main-header" style="display:none;">
+  <div class="logo-area" id="logo-click-area" title="">
+    <div class="logo-dot"><span>T</span></div>
+    <div>
+      <div class="logo-text-main">TOMMY BAHAMAS</div>
+      <div class="logo-text-sub" id="header-sub">CONTROL DE CORTE</div>
+    </div>
+  </div>
+  <div id="header-right" style="display:flex;align-items:center;gap:10px;"></div>
+</header>
+
+<!-- ══════════════════════════════════════════════
+     ALERT BANNER
+══════════════════════════════════════════════ -->
+<div id="alert-box" class="anim-slide"></div>
+
+<!-- ══════════════════════════════════════════════
+     BLOCK SCREEN — RENDIMIENTO > 100%
+══════════════════════════════════════════════ -->
+<div id="block-screen">
+  <div style="font-size:52px;margin-bottom:16px;">🔒</div>
+  <h2 style="font-size:24px;font-weight:800;margin-bottom:12px;">Rendimiento Imposible</h2>
+  <p style="font-size:16px;opacity:.9;margin-bottom:8px;">El rendimiento calculado supera el <strong>100%</strong>.</p>
+  <p style="font-size:14px;opacity:.75;margin-bottom:28px;">Esto indica un error en los datos ingresados.<br>Verifica el área bruta, punteras y cabecitas.</p>
+  <div style="background:rgba(255,255,255,.15);border-radius:12px;padding:16px 24px;margin-bottom:28px;font-family:'JetBrains Mono',monospace;">
+    <div style="font-size:12px;opacity:.7;margin-bottom:4px;">RENDIMIENTO CALCULADO</div>
+    <div id="block-rend-val" style="font-size:40px;font-weight:800;"></div>
+  </div>
+  <button class="btn btn-lg" style="background:#fff;color:var(--red);max-width:280px;" onclick="closeBlockScreen()">← CORREGIR DATOS</button>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SUPERVISOR KEY MODAL
+══════════════════════════════════════════════ -->
+<div id="sup-key-modal" class="modal-overlay">
+  <div class="modal-box anim-pop">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:36px;margin-bottom:8px;">🔑</div>
+      <h3 style="font-size:18px;font-weight:700;">Acceso Supervisor</h3>
+      <p style="font-size:13px;color:var(--text3);margin-top:4px;">Ingresa la clave de supervisión</p>
+    </div>
+    <input id="sup-key-inp" class="inp inp-center" type="password" placeholder="••••••••" style="margin-bottom:14px;font-size:18px;letter-spacing:.2em;" />
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <button class="btn btn-secondary" onclick="closeSupModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="checkSupKey()">INGRESAR →</button>
+    </div>
+    <div id="sup-key-err" style="display:none;margin-top:10px;" class="note-red">Clave incorrecta</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SCREEN: LOGIN
+══════════════════════════════════════════════ -->
+<div id="s-login" class="screen active">
+  <div style="max-width:400px;margin:0 auto;padding:60px 20px 30px;">
+    <div style="text-align:center;margin-bottom:40px;">
+      <div style="width:80px;height:80px;background:var(--red);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 24px rgba(192,0,0,.3);">
+        <span style="font-size:36px;font-weight:900;color:#fff;">T</span>
+      </div>
+      <h1 style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:4px;">Control de Corte</h1>
+      <p style="font-size:13px;color:var(--text3);">Tommy Bahamas · Programa Costco 2026</p>
+    </div>
+    <div class="card" style="padding:28px;">
+      <label class="lbl">Código de Operador</label>
+      <input id="inp-op" class="inp inp-xl" type="text" inputmode="numeric" placeholder="Ej: 15083" style="margin-bottom:20px;" autocomplete="off" />
+      <button class="btn btn-primary btn-lg" onclick="doLogin()">INGRESAR →</button>
+    </div>
+    <p style="text-align:center;font-size:11px;color:var(--text3);margin-top:16px;">Tata Accesorios Globales · Sistema Interno</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SCREEN: SELECT ORDER
+══════════════════════════════════════════════ -->
+<div id="s-order" class="screen">
+  <div style="max-width:500px;margin:0 auto;padding:24px 18px;">
+    <div class="card" style="margin-bottom:18px;border-left:4px solid var(--red);">
+      <div class="lbl">Operador activo</div>
+      <div class="mono" id="so-op-name" style="font-size:22px;font-weight:700;color:var(--red);"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <label class="lbl">Número de orden a trabajar</label>
+      <input id="inp-order" class="inp inp-xl" type="text" placeholder="Ej: T102761" style="text-transform:uppercase;margin-bottom:12px;" autocomplete="off" />
+      <button class="btn btn-primary btn-full btn-lg" onclick="doSelectOrder()">INICIAR ORDEN →</button>
+      <div id="so-error" style="display:none;margin-top:12px;" class="note-red"></div>
+    </div>
+
+    <div class="card">
+      <div class="lbl" style="margin-bottom:12px;">Órdenes disponibles — Tommy Bahamas</div>
+      <div id="orders-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SCREEN: SCAN
+══════════════════════════════════════════════ -->
+<div id="s-scan" class="screen">
+  <div style="max-width:500px;margin:0 auto;padding:18px;">
+
+    <!-- Order panel -->
+    <div id="scan-order-panel" class="card" style="margin-bottom:16px;border-left:4px solid var(--red);"></div>
+
+    <!-- Scan input -->
+    <div class="card" style="margin-bottom:14px;text-align:center;">
+      <div style="font-size:28px;margin-bottom:6px;">📷</div>
+      <div style="font-size:13px;color:var(--text3);margin-bottom:14px;">Escanea o ingresa el código de piel</div>
+      <div id="scan-shake">
+        <input id="inp-scan" class="inp inp-xl" type="text" inputmode="numeric" placeholder="Código de barras..." autocomplete="off" />
+      </div>
+      <button class="btn btn-primary btn-full btn-lg" style="margin-top:12px;" onclick="doScan()">CONFIRMAR ↵</button>
+    </div>
+
+    <!-- Last scanned -->
+    <div id="last-scanned" style="display:none;margin-bottom:14px;" class="card-sm">
+      <div class="lbl">Último registro</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+        <span class="mono" id="ls-tag" style="font-size:14px;font-weight:700;color:var(--red);"></span>
+        <span class="mono" id="ls-rend" style="font-size:15px;font-weight:700;"></span>
+      </div>
+      <div class="mono" id="ls-det" style="font-size:10px;color:var(--text3);margin-top:3px;"></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <button class="btn btn-ghost btn-full" onclick="showDaySummary()">📊 Mi Resumen</button>
+      <button class="btn btn-ghost btn-full" onclick="goToOrderSelect()">← Cambiar Orden</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SCREEN: FORM
+══════════════════════════════════════════════ -->
+<div id="s-form" class="screen">
+  <div style="max-width:500px;margin:0 auto;padding:18px;">
+
+    <div class="card" style="margin-bottom:16px;border-left:4px solid var(--red);">
+      <div class="lbl">Piel escaneada</div>
+      <div class="mono" id="frm-tag" style="font-size:30px;font-weight:800;color:var(--red);"></div>
+      <div id="frm-orden" style="font-size:12px;color:var(--text3);margin-top:3px;"></div>
+      <div id="frm-desc" style="font-size:11px;color:var(--gray);margin-top:2px;font-style:italic;"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <label class="lbl">Punteras</label>
+          <input id="fp" class="inp inp-num" type="number" min="0" placeholder="0" />
+          <div id="fp-hint" class="mono" style="font-size:9px;color:var(--text3);margin-top:4px;"></div>
+        </div>
+        <div>
+          <label class="lbl">Cabecitas</label>
+          <input id="fc" class="inp inp-num" type="number" min="0" placeholder="0" />
+          <div id="fc-hint" class="mono" style="font-size:9px;color:var(--text3);margin-top:4px;"></div>
+        </div>
+      </div>
+      <div>
+        <label class="lbl">Área Bruta (ft²)</label>
+        <input id="fa" class="inp inp-num" type="number" step="0.01" min="0" placeholder="Ej: 22.5" />
+        <div id="fa-hint" style="font-size:10px;color:var(--text3);margin-top:4px;"></div>
+      </div>
+    </div>
+
+    <!-- Rendimiento preview -->
+    <div id="rend-prev" style="display:none;margin-bottom:14px;" class="card-sm">
+      <div class="lbl">Rendimiento estimado</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
+        <div class="mono" id="prev-val" style="font-size:36px;font-weight:800;"></div>
+        <div style="text-align:right;">
+          <div class="mono" id="prev-an" style="font-size:12px;color:var(--text3);"></div>
+          <div class="mono" id="prev-det" style="font-size:10px;color:var(--text3);margin-top:2px;"></div>
+        </div>
+      </div>
+      <div id="rend-warn" style="display:none;margin-top:8px;" class="note-red">⚠ Rendimiento por encima del límite — verifica los datos</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;">
+      <button class="btn btn-ghost" onclick="cancelForm()">← Cancelar</button>
+      <button id="btn-submit" class="btn btn-primary btn-lg" onclick="doSubmit()">REGISTRAR PIEL ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SCREEN: DAY SUMMARY
+══════════════════════════════════════════════ -->
+<div id="s-summary" class="screen">
+  <div style="max-width:500px;margin:0 auto;padding:18px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <h2 style="font-size:18px;font-weight:700;">Mi Resumen del Día</h2>
+      <button class="btn btn-ghost" onclick="showScreen('s-scan')">← Volver</button>
+    </div>
+    <div id="summary-content"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SCREEN: SUPERVISOR
+══════════════════════════════════════════════ -->
+<div id="s-supervisor" class="screen">
+  <div class="tabs" id="sup-tabs">
+    <button class="tab-btn active" onclick="supTab('resumen',this)">RESUMEN</button>
+    <button class="tab-btn" onclick="supTab('ordenes',this)">ÓRDENES</button>
+    <button class="tab-btn" onclick="supTab('operadores',this)">OPERADORES</button>
+    <button class="tab-btn" onclick="supTab('escaneos',this)">ESCANEOS</button>
+    <button class="tab-btn" onclick="supTab('programa',this)">PROGRAMA</button>
+  </div>
+
+  <div style="padding:24px;max-width:1200px;margin:0 auto;">
+
+    <!-- RESUMEN -->
+    <div id="sup-resumen" class="anim-up">
+      <div id="kpi-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;"></div>
+      <div class="card">
+        <div class="lbl" style="margin-bottom:14px;">Progreso por orden</div>
+        <div id="order-prog"></div>
+      </div>
+    </div>
+
+    <!-- ORDENES -->
+    <div id="sup-ordenes" style="display:none;" class="anim-up">
+      <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead><tr>
+            <th>ORDEN</th><th>COLOR</th><th>CLIENTE</th>
+            <th>PIELES</th><th>PUNTERAS</th><th>META P.</th>
+            <th>CABECITAS</th><th>META C.</th>
+            <th>ÁREA NETA</th><th>RENDIMIENTO</th>
+          </tr></thead>
+          <tbody id="tbody-orders"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- OPERADORES -->
+    <div id="sup-operadores" style="display:none;" class="anim-up">
+      <table class="tbl">
+        <thead><tr>
+          <th>#</th><th>OPERADOR</th><th>PIELES</th>
+          <th>PUNTERAS</th><th>CABECITAS</th>
+          <th>ÁREA NETA</th><th>ÁREA BRUTA</th><th>RENDIMIENTO</th>
+        </tr></thead>
+        <tbody id="tbody-ops"></tbody>
+      </table>
+    </div>
+
+    <!-- ESCANEOS -->
+    <div id="sup-escaneos" style="display:none;" class="anim-up">
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+        <select id="flt-ord" onchange="renderEscaneos()" class="inp" style="width:auto;padding:8px 12px;font-size:12px;"></select>
+        <select id="flt-op" onchange="renderEscaneos()" class="inp" style="width:auto;padding:8px 12px;font-size:12px;"></select>
+        <input type="text" id="flt-q" class="inp" placeholder="Buscar etiqueta..." oninput="renderEscaneos()" style="width:180px;padding:8px 12px;font-size:12px;" />
+        <span class="mono" id="scan-lbl" style="font-size:11px;color:var(--text3);margin-left:auto;"></span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead><tr>
+            <th>ETIQUETA</th><th>OPERADOR</th><th>ORDEN</th><th>COLOR</th>
+            <th>PUNTERAS</th><th>CABECITAS</th>
+            <th>ÁREA BRUTA</th><th>ÁREA NETA</th><th>RENDIMIENTO</th><th>FECHA/HORA</th>
+          </tr></thead>
+          <tbody id="tbody-scans"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PROGRAMA -->
+    <div id="sup-programa" style="display:none;" class="anim-up">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+        <div>
+          <h3 style="font-size:14px;font-weight:700;margin-bottom:6px;">📤 Cargar Despacho Semanal (Proaktiv)</h3>
+          <p style="font-size:12px;color:var(--text3);margin-bottom:14px;">Sube el Excel de Proaktiv. Se filtran automáticamente las pieles del programa Tommy Bahamas.</p>
+          <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-in').click()">
+            <div style="font-size:32px;margin-bottom:8px;">📂</div>
+            <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Arrastra tu archivo aquí</div>
+            <div style="font-size:12px;color:var(--text3);">o haz clic · Excel (.xlsx) o CSV</div>
+          </div>
+          <input type="file" id="file-in" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleUpload(this)">
+          <div id="upload-result" style="margin-top:14px;"></div>
+        </div>
+        <div>
+          <h3 style="font-size:14px;font-weight:700;margin-bottom:6px;">📋 Estado del Inventario</h3>
+          <p style="font-size:12px;color:var(--text3);margin-bottom:14px;">Pieles disponibles para escanear por orden.</p>
+          <div class="card" id="inv-status"></div>
+          <div style="display:flex;gap:8px;margin-top:12px;">
+            <button class="btn btn-secondary" style="flex:1;" onclick="exportCSV()">⬇ CSV</button>
+            <button class="btn btn-secondary" style="flex:1;" onclick="exportXLSX()">⬇ Excel</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="lbl" style="margin-bottom:14px;">Todas las órdenes del programa Tommy Bahamas</div>
+        <div style="overflow-x:auto;">
+          <table class="tbl">
+            <thead><tr>
+              <th>ORDEN</th><th>ESTILO</th><th>COLOR</th><th>CLIENTE</th>
+              <th>QTY SETS</th><th>VENCE</th><th>EN INVENTARIO</th><th>ESCANEADAS</th><th>ESTADO</th>
+            </tr></thead>
+            <tbody id="tbody-prog"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Map panel -->
+      <div id="map-panel" style="display:none;margin-top:20px;" class="card">
+        <h4 style="font-size:13px;font-weight:700;margin-bottom:10px;">⚙️ Mapeo manual de columnas</h4>
+        <div id="map-form" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;"></div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-primary" onclick="applyMap()">APLICAR →</button>
+          <button class="btn btn-secondary" onclick="document.getElementById('map-panel').style.display='none'">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /supervisor content -->
+</div><!-- /s-supervisor -->
+
+</div><!-- /app -->
+</body>
+</html>
+<script>
+// ══════════════════════════════════════════════════════════════
+// CONFIGURATION
+// ══════════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://nvuudmhvhrcgahxavwiz.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52dXVkbWh2aHJjZ2FoeGF2d2l6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0OTYwMTEsImV4cCI6MjA4OTA3MjAxMX0.xliDc8vZgpl1o38OCAajhJNqOhJ36TfLNPI2FQGpQ8g';
+
+const HIDE_DB = {"18789615": {"m": 0, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18789610": {"m": 5.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693487": {"m": 22.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693486": {"m": 18.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693488": {"m": 22.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693489": {"m": 23.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693490": {"m": 20.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693494": {"m": 22.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693497": {"m": 25.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693491": {"m": 21.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693495": {"m": 22.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693496": {"m": 22.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693498": {"m": 22.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693500": {"m": 26.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693499": {"m": 24.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693501": {"m": 24.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693502": {"m": 25.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693503": {"m": 25.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693504": {"m": 20.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693505": {"m": 22.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693506": {"m": 23.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693507": {"m": 22.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693508": {"m": 23.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693509": {"m": 24.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693511": {"m": 23.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693512": {"m": 25.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693513": {"m": 22.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693515": {"m": 19.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693514": {"m": 23.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693516": {"m": 26.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693517": {"m": 24.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693518": {"m": 22.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693520": {"m": 25.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693519": {"m": 24.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693521": {"m": 22.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693522": {"m": 22.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693525": {"m": 24.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693527": {"m": 20.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693529": {"m": 26.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693523": {"m": 25.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693526": {"m": 25.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693528": {"m": 24.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693531": {"m": 23.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693532": {"m": 21.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693534": {"m": 25.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18693533": {"m": 23.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18789513": {"m": 2.6487, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693535": {"m": 8.0513, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102480"}, "18694195": {"m": 24.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18789512": {"m": 16.2487, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694196": {"m": 23.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693537": {"m": 21.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693536": {"m": 20.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694197": {"m": 26.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693538": {"m": 24.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694198": {"m": 21.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693540": {"m": 26.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693539": {"m": 23.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694199": {"m": 25.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18694200": {"m": 24.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693541": {"m": 23.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693542": {"m": 27.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694201": {"m": 22.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18694203": {"m": 20.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693544": {"m": 23.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693545": {"m": 23.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693546": {"m": 21.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693547": {"m": 27.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694202": {"m": 27.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693549": {"m": 19.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694204": {"m": 26.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693550": {"m": 23.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694206": {"m": 21.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693548": {"m": 23.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694207": {"m": 24.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693551": {"m": 24.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693552": {"m": 25.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694209": {"m": 23.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693553": {"m": 23.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693554": {"m": 21.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694211": {"m": 21.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693555": {"m": 23.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693557": {"m": 24.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693558": {"m": 23.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693556": {"m": 25.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693559": {"m": 26.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693560": {"m": 20.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694214": {"m": 22.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693563": {"m": 29.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693561": {"m": 24.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694208": {"m": 26.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693564": {"m": 22.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693566": {"m": 19.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694219": {"m": 24.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693568": {"m": 22.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694210": {"m": 23.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693562": {"m": 21.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693565": {"m": 19.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694213": {"m": 21.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693569": {"m": 22.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694218": {"m": 28.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693570": {"m": 22.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693571": {"m": 24.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694221": {"m": 23.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693573": {"m": 22.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693572": {"m": 25.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694220": {"m": 21.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693574": {"m": 22.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694224": {"m": 24.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693575": {"m": 23.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693576": {"m": 24.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694225": {"m": 22.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693577": {"m": 22.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18693579": {"m": 22.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694222": {"m": 23.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18694223": {"m": 24.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693580": {"m": 24.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694228": {"m": 23.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693581": {"m": 23.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694229": {"m": 21.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18694226": {"m": 24.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18693583": {"m": 23.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102476"}, "18694227": {"m": 21.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18694232": {"m": 21.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18694230": {"m": 24.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18694233": {"m": 27.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18694231": {"m": 26.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18694234": {"m": 24.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18694235": {"m": 20.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18694236": {"m": 21.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18694237": {"m": 28.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18694239": {"m": 23.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18694241": {"m": 22.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18694246": {"m": 20.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18694238": {"m": 25.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18694240": {"m": 22.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18694242": {"m": 23.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102479"}, "18697208": {"m": 22.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18697210": {"m": 21.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18697212": {"m": 24.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18697211": {"m": 23.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18692897": {"m": 25.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692898": {"m": 23.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692901": {"m": 24.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692903": {"m": 22.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692904": {"m": 22.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692902": {"m": 21.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692905": {"m": 24.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692906": {"m": 21.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692907": {"m": 24.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692909": {"m": 22.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692908": {"m": 22.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692911": {"m": 23.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692910": {"m": 23.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692913": {"m": 21.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692912": {"m": 22.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692914": {"m": 27.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692915": {"m": 28.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692916": {"m": 25.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692918": {"m": 26.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692919": {"m": 23.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692920": {"m": 28.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692922": {"m": 20.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692921": {"m": 26.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692923": {"m": 27.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692925": {"m": 21.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692924": {"m": 20.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692926": {"m": 25.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692927": {"m": 23.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692928": {"m": 21.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692929": {"m": 24.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692930": {"m": 22.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692933": {"m": 22.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692931": {"m": 22.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692932": {"m": 20.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692934": {"m": 26.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692936": {"m": 22.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692935": {"m": 25.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692937": {"m": 27.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692938": {"m": 24.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692939": {"m": 20.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18692940": {"m": 16.3426, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102517"}, "18784043": {"m": 6.5574, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T103656"}, "18692941": {"m": 26.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T103656"}, "18692943": {"m": 19.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T103656"}, "18693584": {"m": 21.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693585": {"m": 23.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693586": {"m": 24.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693587": {"m": 24.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693588": {"m": 22.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693589": {"m": 23.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693590": {"m": 22.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693591": {"m": 25.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693594": {"m": 20.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693592": {"m": 21.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693593": {"m": 20.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693596": {"m": 24.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693597": {"m": 24.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693595": {"m": 22.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693598": {"m": 22.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693600": {"m": 22.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693601": {"m": 24.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693603": {"m": 23.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693602": {"m": 23.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693604": {"m": 23.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693605": {"m": 23.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693606": {"m": 22.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693607": {"m": 23.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693608": {"m": 25.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693609": {"m": 21.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693611": {"m": 24.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693610": {"m": 25.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693612": {"m": 24.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693613": {"m": 26.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693614": {"m": 27.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693615": {"m": 25.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693616": {"m": 23.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693617": {"m": 23.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693618": {"m": 23.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693619": {"m": 21.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693620": {"m": 21.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693621": {"m": 24.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693622": {"m": 20.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693623": {"m": 26.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693624": {"m": 23.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18693625": {"m": 18.2426, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102516"}, "18783692": {"m": 4.3574, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T103655"}, "18693626": {"m": 24.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T103655"}, "18693633": {"m": 23.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T103655"}, "18693629": {"m": 24.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693627": {"m": 21.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693628": {"m": 23.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693631": {"m": 24.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693632": {"m": 24.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18696917": {"m": 22.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18696921": {"m": 22.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18696922": {"m": 18.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18692944": {"m": 23.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18692947": {"m": 19.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18692948": {"m": 22.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18692952": {"m": 23.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18692953": {"m": 24.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18692959": {"m": 20.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18692964": {"m": 22.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692971": {"m": 23.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692963": {"m": 22.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692942": {"m": 23.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692945": {"m": 24.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692946": {"m": 24.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692957": {"m": 17.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692958": {"m": 20.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692961": {"m": 19.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692962": {"m": 23.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692972": {"m": 22.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692965": {"m": 21.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692970": {"m": 21.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692973": {"m": 26.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692976": {"m": 20.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692975": {"m": 22.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692978": {"m": 23.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692979": {"m": 24.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692982": {"m": 23.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692974": {"m": 19.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692977": {"m": 22.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692983": {"m": 20.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692980": {"m": 21.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692986": {"m": 22.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692987": {"m": 28.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692990": {"m": 19.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692991": {"m": 21.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692994": {"m": 21.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692995": {"m": 23.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692998": {"m": 23.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692999": {"m": 27.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18693003": {"m": 20.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18693002": {"m": 23.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18693007": {"m": 23.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18693008": {"m": 21.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18693010": {"m": 25.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692981": {"m": 23.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692984": {"m": 19.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692985": {"m": 22.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692988": {"m": 21.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692989": {"m": 24.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692818": {"m": 21.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692993": {"m": 25.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18693000": {"m": 21.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692996": {"m": 17.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18692997": {"m": 20.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18693001": {"m": 23.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18693005": {"m": 20.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18693004": {"m": 21.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18693009": {"m": 25.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18693012": {"m": 19.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18693011": {"m": 20.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18693013": {"m": 23.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102763"}, "18770593": {"m": 0, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18770592": {"m": 0, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18317731": {"m": 25.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18757521": {"m": 6.09, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693634": {"m": 21.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693636": {"m": 22.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693635": {"m": 22.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693637": {"m": 24.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693638": {"m": 23.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693639": {"m": 24.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693641": {"m": 22.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693640": {"m": 22.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693643": {"m": 23.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693644": {"m": 24.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693642": {"m": 22.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693014": {"m": 23.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18693016": {"m": 23.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18693017": {"m": 24.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18693018": {"m": 25.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18693020": {"m": 23.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18693021": {"m": 23.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18693022": {"m": 22.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18693019": {"m": 22.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18693023": {"m": 20.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18693024": {"m": 21.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18693026": {"m": 25.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18693027": {"m": 24.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18693031": {"m": 25.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18693025": {"m": 27.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18693030": {"m": 19.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18693028": {"m": 23.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18693029": {"m": 22.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18692838": {"m": 23.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18693032": {"m": 23.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18060098": {"m": 29.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18060091": {"m": 27.75, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18060401": {"m": 13.5731, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18060105": {"m": 25.25, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18060104": {"m": 27.75, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18060107": {"m": 28.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18060103": {"m": 27.75, "d": "PIEL VACCHETA LADOS 1.4/1.6 DARK BROWN - SIN PASTING", "o": "T102764"}, "18317705": {"m": 22.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18317684": {"m": 24.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18317706": {"m": 22.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18317711": {"m": 25.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18317683": {"m": 21.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18317691": {"m": 22.5308, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18693806": {"m": 27.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18693804": {"m": 25.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18693807": {"m": 20.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18693809": {"m": 23.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18693810": {"m": 26.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18693815": {"m": 25.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18693816": {"m": 24.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18693808": {"m": 23.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18693812": {"m": 28.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18693813": {"m": 23.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18693814": {"m": 22.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18693817": {"m": 24.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18693819": {"m": 22.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18693820": {"m": 20.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18693821": {"m": 21.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18693822": {"m": 22.3, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18693823": {"m": 27.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18693824": {"m": 22.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102762"}, "18693826": {"m": 22.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693827": {"m": 24.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693825": {"m": 26.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693829": {"m": 23.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693831": {"m": 22.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693828": {"m": 25.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693830": {"m": 23.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693832": {"m": 24.7, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693833": {"m": 25.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693834": {"m": 23.9, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693835": {"m": 24.6, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693836": {"m": 27.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693837": {"m": 23.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693838": {"m": 25.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693839": {"m": 24.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693842": {"m": 25.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693840": {"m": 24.4, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693841": {"m": 23.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693845": {"m": 22.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693844": {"m": 25.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693848": {"m": 27.1, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693849": {"m": 26.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693843": {"m": 27.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693846": {"m": 23.2, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693847": {"m": 25.8, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693851": {"m": 24.0, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}, "18693852": {"m": 21.5, "d": "PIEL VACCHETA LADOS 1.4/1.6 BLACK - SIN PASTING", "o": "T102761"}};
+const TOMMY_META = {"T102517": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102517::BRNY", "qty": 7440, "exdate": "2026-04-30", "cliente": "COST", "color": "DARK BROWN", "punteras": 6420, "cabecitas": 7440, "meta_parejas": 7440}, "T102476": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102476::BLGREY", "qty": 8160, "exdate": "2026-04-30", "cliente": "COST", "color": "BLACK", "punteras": 7040, "cabecitas": 8160, "meta_parejas": 8160}, "T103655": {"linea": "70011 Modulo Costo Tommy", "estilo": "A103655::BLGREY", "qty": 408, "exdate": "2026-02-26", "cliente": "COMX", "color": "BLACK", "punteras": 350, "cabecitas": 408, "meta_parejas": 408}, "T102761": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102761::BLGREY", "qty": 7200, "exdate": "2026-02-26", "cliente": "COMX", "color": "BLACK", "punteras": 6200, "cabecitas": 7200, "meta_parejas": 7200}, "T102762": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102762::BLGREY", "qty": 4680, "exdate": "2026-02-26", "cliente": "COMX", "color": "BLACK", "punteras": 4030, "cabecitas": 4680, "meta_parejas": 4680}, "T102479": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102479::BRNY", "qty": 8160, "exdate": "2026-04-30", "cliente": "COST", "color": "DARK BROWN", "punteras": 7040, "cabecitas": 8160, "meta_parejas": 8160}, "T102516": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102516::BLGREY", "qty": 7440, "exdate": "2026-04-30", "cliente": "COST", "color": "BLACK", "punteras": 6420, "cabecitas": 7440, "meta_parejas": 7440}, "T102764": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102764::BRNY", "qty": 5928, "exdate": "2026-02-26", "cliente": "COMX", "color": "DARK BROWN", "punteras": 5100, "cabecitas": 5928, "meta_parejas": 5928}, "T103656": {"linea": "70011 Modulo Costo Tommy", "estilo": "A103656::BRNY", "qty": 408, "exdate": "2026-02-26", "cliente": "COMX", "color": "DARK BROWN", "punteras": 350, "cabecitas": 408, "meta_parejas": 408}, "T102480": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102480::BLGREY", "qty": 8160, "exdate": "2026-04-30", "cliente": "COST", "color": "BLACK", "punteras": 7040, "cabecitas": 8160, "meta_parejas": 8160}, "T102763": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102763::BRNY", "qty": 9120, "exdate": "2026-02-26", "cliente": "COMX", "color": "DARK BROWN", "punteras": 7860, "cabecitas": 9120, "meta_parejas": 9120}};
+const ALL_PROG = {"T102761": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102761::BLGREY", "qty": 7200, "exdate": "2026-02-26", "cliente": "COMX", "color": "BLACK", "punteras": 6200, "cabecitas": 7200}, "T102762": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102762::BLGREY", "qty": 4680, "exdate": "2026-02-26", "cliente": "COMX", "color": "BLACK", "punteras": 4030, "cabecitas": 4680}, "T102764": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102764::BRNY", "qty": 5928, "exdate": "2026-02-26", "cliente": "COMX", "color": "DARK BROWN", "punteras": 5100, "cabecitas": 5928}, "T103656": {"linea": "70011 Modulo Costo Tommy", "estilo": "A103656::BRNY", "qty": 408, "exdate": "2026-02-26", "cliente": "COMX", "color": "DARK BROWN", "punteras": 350, "cabecitas": 408}, "T103655": {"linea": "70011 Modulo Costo Tommy", "estilo": "A103655::BLGREY", "qty": 408, "exdate": "2026-02-26", "cliente": "COMX", "color": "BLACK", "punteras": 350, "cabecitas": 408}, "T102763": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102763::BRNY", "qty": 9120, "exdate": "2026-02-26", "cliente": "COMX", "color": "DARK BROWN", "punteras": 7860, "cabecitas": 9120}, "T102516": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102516::BLGREY", "qty": 7440, "exdate": "2026-04-30", "cliente": "COST", "color": "BLACK", "punteras": 6420, "cabecitas": 7440}, "T102517": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102517::BRNY", "qty": 7440, "exdate": "2026-04-30", "cliente": "COST", "color": "DARK BROWN", "punteras": 6420, "cabecitas": 7440}, "T102476": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102476::BLGREY", "qty": 8160, "exdate": "2026-04-30", "cliente": "COST", "color": "BLACK", "punteras": 7040, "cabecitas": 8160}, "T102479": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102479::BRNY", "qty": 8160, "exdate": "2026-04-30", "cliente": "COST", "color": "DARK BROWN", "punteras": 7040, "cabecitas": 8160}, "T102480": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102480::BLGREY", "qty": 8160, "exdate": "2026-04-30", "cliente": "COST", "color": "BLACK", "punteras": 7040, "cabecitas": 8160}, "T102481": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102481::BRNY", "qty": 8160, "exdate": "2026-04-30", "cliente": "COST", "color": "DARK BROWN"}, "T102482": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102482::BLGREY", "qty": 2040, "exdate": "2026-04-30", "cliente": "COST", "color": "BLACK"}, "T102484": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102484::BRNY", "qty": 2040, "exdate": "2026-04-30", "cliente": "COST", "color": "DARK BROWN"}, "T102465": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102465::BLGREY", "qty": 8160, "exdate": "2026-04-30", "cliente": "COST", "color": "BLACK"}, "T102467": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102467::BRNY", "qty": 8160, "exdate": "2026-04-30", "cliente": "COST", "color": "DARK BROWN"}, "T102469": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102469::BLGREY", "qty": 8160, "exdate": "2026-04-30", "cliente": "COST", "color": "BLACK"}, "T102471": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102471::BRNY", "qty": 8160, "exdate": "2026-04-30", "cliente": "COST", "color": "DARK BROWN"}, "T102472": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102472::BLGREY", "qty": 8160, "exdate": "2026-04-30", "cliente": "COST", "color": "BLACK"}, "T102473": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102473::BRNY", "qty": 8160, "exdate": "2026-04-30", "cliente": "COST", "color": "DARK BROWN"}, "T102474": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102474::BLGREY", "qty": 8160, "exdate": "2026-04-30", "cliente": "COST", "color": "BLACK"}, "T102475": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102475::BRNY", "qty": 8160, "exdate": "2026-04-30", "cliente": "COST", "color": "DARK BROWN"}, "T102487": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102487::BLGREY", "qty": 8160, "exdate": "2026-05-07", "cliente": "COST", "color": "BLACK"}, "T102488": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102488::BRNY", "qty": 8160, "exdate": "2026-05-07", "cliente": "COST", "color": "DARK BROWN"}, "T102489": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102489::BLGREY", "qty": 8160, "exdate": "2026-05-07", "cliente": "COST", "color": "BLACK"}, "T102490": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102490::BRNY", "qty": 8160, "exdate": "2026-05-07", "cliente": "COST", "color": "DARK BROWN"}, "T102491": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102491::BLGREY", "qty": 8160, "exdate": "2026-05-07", "cliente": "COST", "color": "BLACK"}, "T102492": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102492::BRNY", "qty": 8160, "exdate": "2026-05-07", "cliente": "COST", "color": "DARK BROWN"}, "T102493": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102493::BLGREY", "qty": 8160, "exdate": "2026-05-07", "cliente": "COST", "color": "BLACK"}, "T102494": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102494::BRNY", "qty": 8160, "exdate": "2026-05-07", "cliente": "COST", "color": "DARK BROWN"}, "T102495": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102495::BLGREY", "qty": 8160, "exdate": "2026-05-07", "cliente": "COST", "color": "BLACK"}, "T102496": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102496::BRNY", "qty": 8160, "exdate": "2026-05-07", "cliente": "COST", "color": "DARK BROWN"}, "T102497": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102497::BLGREY", "qty": 8160, "exdate": "2026-05-07", "cliente": "COST", "color": "BLACK"}, "T102498": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102498::BRNY", "qty": 8160, "exdate": "2026-05-07", "cliente": "COST", "color": "DARK BROWN"}, "T102503": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102503::BLGREY", "qty": 8160, "exdate": "2026-05-14", "cliente": "COST", "color": "BLACK"}, "T102501": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102501::BRNY", "qty": 102, "exdate": "2026-05-07", "cliente": "COST", "color": "DARK BROWN"}, "T102500": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102500::BLGREY", "qty": 102, "exdate": "2026-05-07", "cliente": "COST", "color": "BLACK"}, "T102504": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102504::BRNY", "qty": 8160, "exdate": "2026-05-14", "cliente": "COST", "color": "DARK BROWN"}, "T102505": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102505::BLGREY", "qty": 8160, "exdate": "2026-05-14", "cliente": "COST", "color": "BLACK"}, "T102506": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102506::BRNY", "qty": 8160, "exdate": "2026-05-14", "cliente": "COST", "color": "DARK BROWN"}, "T102507": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102507::BLGREY", "qty": 8160, "exdate": "2026-05-14", "cliente": "COST", "color": "BLACK"}, "T102508": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102508::BRNY", "qty": 8160, "exdate": "2026-05-14", "cliente": "COST", "color": "DARK BROWN"}, "T102509": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102509::BLGREY", "qty": 8160, "exdate": "2026-05-14", "cliente": "COST", "color": "BLACK"}, "T102510": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102510::BRNY", "qty": 8160, "exdate": "2026-05-14", "cliente": "COST", "color": "DARK BROWN"}, "T102511": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102511::BLGREY", "qty": 8160, "exdate": "2026-05-14", "cliente": "COST", "color": "BLACK"}, "T102512": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102512::BRNY", "qty": 8160, "exdate": "2026-05-14", "cliente": "COST", "color": "DARK BROWN"}, "T102513": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102513::BLGREY", "qty": 7854, "exdate": "2026-05-14", "cliente": "COST", "color": "BLACK"}, "T102514": {"linea": "70011 Modulo Costo Tommy", "estilo": "A102514::BRNY", "qty": 7854, "exdate": "2026-05-14", "cliente": "COST", "color": "DARK BROWN"}};
+const AP = 0.038088;
+const AC = 0.054792;
+
+// ══════════════════════════════════════════════════════════════
+// SUPABASE API
+// ══════════════════════════════════════════════════════════════
+const SB = {
+  headers: { 'Content-Type':'application/json', 'apikey': SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY },
+  async get(table, params='') {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${params}`, { headers: this.headers });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async post(table, body) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      method:'POST', headers:{...this.headers,'Prefer':'return=representation'}, body:JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async upsert(table, body) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      method:'POST', headers:{...this.headers,'Prefer':'resolution=merge-duplicates,return=representation'}, body:JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+};
+
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+let currentOp = '', currentOrder = '', currentEtiqueta = '';
+let isSupervisor = false;
+let supLogoCLicks = 0, supLogoTimer = null;
+let currentSuperTab = 'resumen';
+let allScans = [];
+let uploadedCols = [], uploadedRows = [];
+let refreshInterval = null;
+
+// ══════════════════════════════════════════════════════════════
+// ALERTS
+// ══════════════════════════════════════════════════════════════
+let alertTimer;
+function showAlert(type, msg, dur=4500) {
+  const b = document.getElementById('alert-box');
+  const styles = {
+    error: 'background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;',
+    warn:  'background:#fffbeb;border:1px solid #fde68a;color:#92400e;',
+    success:'background:#f0fdf4;border:1px solid #86efac;color:#166534;',
+    info:  'background:#eff6ff;border:1px solid #93c5fd;color:#1e40af;'
+  };
+  b.style.cssText = (styles[type]||styles.info) + 'display:block;box-shadow:0 8px 24px rgba(0,0,0,.15);';
+  b.textContent = msg;
+  b.className = 'anim-slide';
+  clearTimeout(alertTimer);
+  if (dur) alertTimer = setTimeout(() => b.style.display='none', dur);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SCREENS
+// ══════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  el.classList.add('active');
+  el.classList.add('anim-up');
+  setTimeout(() => el.classList.remove('anim-up'), 400);
+}
+
+// ══════════════════════════════════════════════════════════════
+// LOGO SECRET CLICK (x3 → supervisor access)
+// ══════════════════════════════════════════════════════════════
+document.getElementById('logo-click-area').addEventListener('click', () => {
+  supLogoCLicks++;
+  clearTimeout(supLogoTimer);
+  supLogoTimer = setTimeout(() => supLogoCLicks = 0, 1200);
+  if (supLogoCLicks >= 3) {
+    supLogoCLicks = 0;
+    document.getElementById('sup-key-modal').style.display = 'flex';
+    setTimeout(() => document.getElementById('sup-key-inp').focus(), 100);
+  }
+});
+
+function closeSupModal() {
+  document.getElementById('sup-key-modal').style.display = 'none';
+  document.getElementById('sup-key-inp').value = '';
+  document.getElementById('sup-key-err').style.display = 'none';
+}
+
+async function checkSupKey() {
+  const val = document.getElementById('sup-key-inp').value.trim();
+  if (!val) return;
+  try {
+    const rows = await SB.get('config', `?key=eq.supervisor_pass&select=value`);
+    const stored = rows?.[0]?.value || '';
+    if (val === stored) {
+      closeSupModal();
+      enterSupervisor();
+    } else {
+      document.getElementById('sup-key-err').style.display = 'block';
+      document.getElementById('sup-key-inp').value = '';
+      document.getElementById('sup-key-inp').focus();
+    }
+  } catch(e) {
+    showAlert('error', 'Error verificando clave: '+e.message);
+  }
+}
+document.getElementById('sup-key-inp').addEventListener('keydown', e => { if(e.key==='Enter') checkSupKey(); });
+
+function enterSupervisor() {
+  isSupervisor = true;
+  document.getElementById('main-header').style.display = 'flex';
+  document.getElementById('header-sub').textContent = 'MÓDULO SUPERVISOR';
+  document.getElementById('header-right').innerHTML = `
+    <span class="badge badge-red">SUPERVISOR</span>
+    <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px;" onclick="exitSupervisor()">← Operador</button>`;
+  showScreen('s-supervisor');
+  loadAndRenderSupervisor();
+  clearInterval(refreshInterval);
+  refreshInterval = setInterval(loadAndRenderSupervisor, 6000);
+}
+
+function exitSupervisor() {
+  isSupervisor = false;
+  clearInterval(refreshInterval);
+  document.getElementById('header-sub').textContent = 'CONTROL DE CORTE';
+  document.getElementById('header-right').innerHTML = '';
+  if (currentOp) {
+    showScreen(currentOrder ? 's-scan' : 's-order');
+  } else {
+    showScreen('s-login');
+    document.getElementById('main-header').style.display = 'none';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// BLOCK SCREEN (rendimiento >100%)
+// ══════════════════════════════════════════════════════════════
+function showBlockScreen(rend) {
+  document.getElementById('block-rend-val').textContent = (rend*100).toFixed(1)+'%';
+  document.getElementById('block-screen').classList.add('show');
+}
+function closeBlockScreen() {
+  document.getElementById('block-screen').classList.remove('show');
+  document.getElementById('fp').focus();
+}
+
+// ══════════════════════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════════════════════
+function doLogin() {
+  const v = document.getElementById('inp-op').value.trim();
+  if (!v || v.length < 3) { showAlert('error','❌ Ingresa un código válido (mínimo 3 caracteres)'); return; }
+  currentOp = v;
+  document.getElementById('so-op-name').textContent = v;
+  document.getElementById('main-header').style.display = 'flex';
+  document.getElementById('header-right').innerHTML = `
+    <span class="mono" style="font-size:11px;color:var(--text3);">OP: <strong style="color:var(--red);">${v}</strong></span>`;
+  renderOrdersList();
+  showScreen('s-order');
+}
+document.getElementById('inp-op').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+// ══════════════════════════════════════════════════════════════
+// ORDER SELECTION
+// ══════════════════════════════════════════════════════════════
+function getAvailableOrders() { return Object.keys(TOMMY_META).sort(); }
+
+function renderOrdersList() {
+  const container = document.getElementById('orders-list');
+  container.innerHTML = '';
+  getAvailableOrders().forEach(ordId => {
+    const m = TOMMY_META[ordId] || {};
+    const isBlack = (m.color||'').includes('BLACK');
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:10px 12px;border-radius:8px;margin-bottom:6px;cursor:pointer;border:1.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;transition:all .15s;background:var(--bg2);';
+    div.onmouseenter = () => { div.style.borderColor='var(--red)'; div.style.background='var(--red-bg)'; };
+    div.onmouseleave = () => { div.style.borderColor='var(--border)'; div.style.background='var(--bg2)'; };
+    div.onclick = () => { document.getElementById('inp-order').value = ordId; doSelectOrder(); };
+    div.innerHTML = `
+      <div>
+        <span class="mono" style="font-size:14px;font-weight:700;color:var(--red);">${ordId}</span>
+        <span style="font-size:11px;color:var(--text3);margin-left:8px;">${m.estilo||''}</span>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span class="badge ${isBlack?'badge-black':'badge-brown'}">${m.color||''}</span>
+        <span class="mono" style="font-size:10px;color:var(--text3);">${(m.meta_parejas||0).toLocaleString()} sets</span>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+function doSelectOrder() {
+  const v = document.getElementById('inp-order').value.trim().toUpperCase();
+  const errEl = document.getElementById('so-error');
+  if (!v) { errEl.textContent='Escribe el número de orden'; errEl.style.display='block'; return; }
+  if (!getAvailableOrders().includes(v)) {
+    errEl.innerHTML = `❌ La orden <strong>${v}</strong> no pertenece al programa Tommy Bahamas activo.<br><span style="font-size:11px;">Disponibles: ${getAvailableOrders().join(', ')}</span>`;
+    errEl.style.display='block'; return;
+  }
+  errEl.style.display = 'none';
+  currentOrder = v;
+  renderScanPanel().then(() => {
+    showScreen('s-scan');
+    showAlert('success', `✅ Orden ${v} activada — ${TOMMY_META[v]?.color||''} · Meta: ${(TOMMY_META[v]?.meta_parejas||0).toLocaleString()} parejas`, 3000);
+    setTimeout(() => document.getElementById('inp-scan').focus(), 350);
+  });
+}
+document.getElementById('inp-order').addEventListener('keydown', e => { if(e.key==='Enter') doSelectOrder(); });
+
+function goToOrderSelect() {
+  currentOrder = '';
+  document.getElementById('last-scanned').style.display = 'none';
+  renderOrdersList();
+  showScreen('s-order');
+}
+
+// ══════════════════════════════════════════════════════════════
+// SCAN PANEL
+// ══════════════════════════════════════════════════════════════
+async function renderScanPanel() {
+  const meta = TOMMY_META[currentOrder] || {};
+  let scans = [];
+  try { scans = await SB.get('scans', `?orden=eq.${currentOrder}&select=punteras,cabecitas,rendimiento`); } catch(e){}
+  const totP = scans.reduce((a,b)=>a+b.punteras,0);
+  const totC = scans.reduce((a,b)=>a+b.cabecitas,0);
+  const mp = meta.meta_parejas||0;
+  const fP = Math.max(0, mp - totP);
+  const fC = Math.max(0, mp - totC);
+  const pctP = mp ? Math.min(100, totP/mp*100) : 0;
+  const pctC = mp ? Math.min(100, totC/mp*100) : 0;
+  const isBlack = (meta.color||'').includes('BLACK');
+
+  document.getElementById('scan-order-panel').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+      <div>
+        <div class="lbl">Orden activa</div>
+        <div class="mono" style="font-size:26px;font-weight:800;color:var(--red);">${currentOrder}</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+          <span class="badge ${isBlack?'badge-black':'badge-brown'}">${meta.color||''}</span>
+          <span style="font-size:11px;color:var(--text3);">${meta.estilo||''} · ${meta.cliente||''}</span>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div class="lbl">Pieles</div>
+        <div class="mono" style="font-size:24px;font-weight:700;">${scans.length}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      ${[['PUNTERAS',totP,mp,fP,pctP,'var(--red)'],['CABECITAS',totC,mp,fC,pctC,'var(--blue)']].map(([lbl,done,goal,falta,pct,col])=>`
+        <div style="background:var(--bg3);border-radius:8px;padding:10px 12px;border:1px solid var(--border);">
+          <div class="lbl">${lbl}</div>
+          <div class="prog-bg" style="margin-bottom:6px;">
+            <div class="prog-fill" style="width:${pct}%;background:${pct>=100?'var(--green)':col};"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;">
+            <span class="mono" style="font-size:14px;font-weight:700;">${done.toLocaleString()}</span>
+            <span class="mono" style="font-size:11px;color:${falta===0?'var(--green)':'var(--red)'};">${falta===0?'✓ LISTO':'−'+falta.toLocaleString()}</span>
+          </div>
+          <div class="mono" style="font-size:9px;color:var(--text3);">META: ${goal.toLocaleString()}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// SCAN
+// ══════════════════════════════════════════════════════════════
+async function doScan() {
+  const code = document.getElementById('inp-scan').value.trim();
+  if (!code) return;
+  document.getElementById('inp-scan').value = '';
+
+  // Validate format
+  if (!/^\d{7,9}$/.test(code)) {
+    shake(); showAlert('error', `❌ "${code}" no es un código de etiqueta válido (debe ser un número de 7–9 dígitos)`);
+    return;
+  }
+
+  // Check already scanned in Supabase
+  try {
+    const ex = await SB.get('scans', `?etiqueta=eq.${code}&select=operador,orden`);
+    if (ex.length > 0) {
+      shake(); showAlert('error', `⚠️ Piel ${code} ya fue registrada por operador ${ex[0].operador} en orden ${ex[0].orden}`, 5000);
+      return;
+    }
+  } catch(e) { showAlert('warn','Sin conexión — no se pudo verificar duplicado'); }
+
+  // Check belongs to current order
+  const hideInfo = HIDE_DB[code] || null;
+  if (hideInfo) {
+    if (hideInfo.o !== currentOrder) {
+      shake(); showAlert('error', `🚫 Piel ${code} pertenece a la orden ${hideInfo.o}, no a ${currentOrder}. ¡Escaneo bloqueado!`, 6000);
+      return;
+    }
+  } else {
+    showAlert('warn', `⚠️ Piel ${code} no está en el inventario cargado. Verifica antes de continuar.`, 4000);
+  }
+
+  currentEtiqueta = code;
+  const meta = TOMMY_META[currentOrder] || {};
+  let scans = [];
+  try { scans = await SB.get('scans', `?orden=eq.${currentOrder}&select=punteras,cabecitas`); } catch(e){}
+  const totP = scans.reduce((a,b)=>a+b.punteras,0);
+  const totC = scans.reduce((a,b)=>a+b.cabecitas,0);
+
+  // Pre-fill area
+  const medida = hideInfo?.m || 0;
+  document.getElementById('fp').value = '';
+  document.getElementById('fc').value = '';
+  document.getElementById('fa').value = medida > 1 ? medida : '';
+  document.getElementById('fa-hint').textContent = medida > 1 ? `📦 Área desde inventario: ${medida} ft²` : '';
+  document.getElementById('rend-prev').style.display = 'none';
+  document.getElementById('rend-warn').style.display = 'none';
+
+  document.getElementById('frm-tag').textContent = code;
+  document.getElementById('frm-orden').textContent = `Orden: ${currentOrder} · ${meta.color||''}`;
+  document.getElementById('frm-desc').textContent = hideInfo?.d || '';
+  document.getElementById('fp-hint').textContent = `Meta: ${(meta.meta_parejas||0).toLocaleString()} · Registradas: ${totP.toLocaleString()}`;
+  document.getElementById('fc-hint').textContent = `Meta: ${(meta.meta_parejas||0).toLocaleString()} · Registradas: ${totC.toLocaleString()}`;
+
+  ['fp','fc','fa'].forEach(id => document.getElementById(id).oninput = updatePreview);
+  showScreen('s-form');
+}
+document.getElementById('inp-scan').addEventListener('keydown', e => { if(e.key==='Enter') doScan(); });
+
+function shake() {
+  const el = document.getElementById('scan-shake');
+  el.className = 'anim-shake';
+  setTimeout(() => el.className = '', 400);
+}
+
+// ══════════════════════════════════════════════════════════════
+// FORM PREVIEW
+// ══════════════════════════════════════════════════════════════
+function updatePreview() {
+  const p = parseInt(document.getElementById('fp').value)||0;
+  const c = parseInt(document.getElementById('fc').value)||0;
+  const ab = parseFloat(document.getElementById('fa').value)||0;
+  const prevEl = document.getElementById('rend-prev');
+  if ((p||c) && ab>0) {
+    const an = p*AP + c*AC;
+    const rend = an/ab;
+    const col = rend>=.8?'var(--green)':rend>=.72?'var(--text2)':rend<.72?'var(--red)':'var(--text2)';
+    const over = rend>1;
+    document.getElementById('prev-val').style.color = over ? 'var(--red)' : col;
+    document.getElementById('prev-val').textContent = (rend*100).toFixed(1)+'%';
+    document.getElementById('prev-an').textContent = `Área neta: ${an.toFixed(3)} ft²`;
+    document.getElementById('prev-det').textContent = `P: ${p} · C: ${c}`;
+    document.getElementById('rend-warn').style.display = over ? 'block' : 'none';
+    document.getElementById('btn-submit').disabled = over;
+    document.getElementById('btn-submit').style.opacity = over ? '.5' : '1';
+    prevEl.style.display = 'block';
+  } else {
+    prevEl.style.display = 'none';
+    document.getElementById('btn-submit').disabled = false;
+    document.getElementById('btn-submit').style.opacity = '1';
+  }
+}
+
+function cancelForm() {
+  currentEtiqueta = '';
+  showScreen('s-scan');
+  renderScanPanel();
+  setTimeout(() => document.getElementById('inp-scan').focus(), 200);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SUBMIT
+// ══════════════════════════════════════════════════════════════
+async function doSubmit() {
+  const p  = parseInt(document.getElementById('fp').value)||0;
+  const c  = parseInt(document.getElementById('fc').value)||0;
+  const ab = parseFloat(document.getElementById('fa').value)||0;
+
+  if (!p && !c) { showAlert('error','❌ Ingresa al menos punteras o cabecitas'); return; }
+  if (!ab||ab<=0) { showAlert('error','❌ Ingresa el área bruta'); return; }
+
+  const an = p*AP + c*AC;
+  const rend = an/ab;
+
+  // HARD BLOCK: rendimiento > 100%
+  if (rend > 1.0) { showBlockScreen(rend); return; }
+
+  const meta = TOMMY_META[currentOrder]||{};
+  const rec = {
+    etiqueta: parseInt(currentEtiqueta),
+    operador: currentOp,
+    orden: currentOrder,
+    color: meta.color||'',
+    punteras: p,
+    cabecitas: c,
+    area_bruta: parseFloat(ab.toFixed(4)),
+    area_neta: parseFloat(an.toFixed(6)),
+    rendimiento: parseFloat(rend.toFixed(6))
+  };
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Guardando...';
+
+  try {
+    await SB.post('scans', rec);
+    const col = rend>=.8?'var(--green)':rend<.72?'var(--red)':'var(--text2)';
+    document.getElementById('last-scanned').style.display = 'block';
+    document.getElementById('ls-tag').textContent = currentEtiqueta;
+    document.getElementById('ls-rend').style.color = col;
+    document.getElementById('ls-rend').textContent = 'Rend. '+(rend*100).toFixed(1)+'%';
+    // Get updated totals
+    const scans = await SB.get('scans', `?orden=eq.${currentOrder}&select=punteras,cabecitas`);
+    const totP = scans.reduce((a,b)=>a+b.punteras,0);
+    const totC = scans.reduce((a,b)=>a+b.cabecitas,0);
+    const mp = meta.meta_parejas||0;
+    document.getElementById('ls-det').textContent = `P:${p} · C:${c} · Área neta:${an.toFixed(3)} · Faltan P:${Math.max(0,mp-totP).toLocaleString()} C:${Math.max(0,mp-totC).toLocaleString()}`;
+    currentEtiqueta = '';
+    await renderScanPanel();
+    showAlert('success', `✅ Piel registrada · Rend: ${(rend*100).toFixed(1)}% · Faltan P:${Math.max(0,mp-totP).toLocaleString()} C:${Math.max(0,mp-totC).toLocaleString()}`, 4000);
+    showScreen('s-scan');
+    setTimeout(() => document.getElementById('inp-scan').focus(), 250);
+  } catch(e) {
+    showAlert('error', '❌ Error al guardar: '+e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'REGISTRAR PIEL ✓';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// DAY SUMMARY
+// ══════════════════════════════════════════════════════════════
+async function showDaySummary() {
+  showScreen('s-summary');
+  const container = document.getElementById('summary-content');
+  container.innerHTML = '<div style="text-align:center;padding:32px;"><span class="spinner spinner-dark"></span></div>';
+  try {
+    const today = new Date().toISOString().slice(0,10);
+    const scans = await SB.get('scans',`?operador=eq.${currentOp}&fecha=gte.${today}T00:00:00&select=color,punteras,cabecitas,area_bruta,area_neta,rendimiento,orden`);
+    if (!scans.length) {
+      container.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--text3);">Sin registros hoy todavía</div>';
+      return;
+    }
+    const byColor = {};
+    scans.forEach(s => {
+      const col = s.color||'SIN COLOR';
+      if (!byColor[col]) byColor[col]={count:0,p:0,c:0,an:0,ab:0};
+      byColor[col].count++; byColor[col].p+=s.punteras; byColor[col].c+=s.cabecitas;
+      byColor[col].an+=s.area_neta; byColor[col].ab+=s.area_bruta;
+    });
+    const total = scans.length;
+    const totAN = scans.reduce((a,b)=>a+b.area_neta,0);
+    const totAB = scans.reduce((a,b)=>a+b.area_bruta,0);
+    const rendGlobal = totAB>0?totAN/totAB:0;
+    const rendCol = rendGlobal>=.8?'var(--green)':rendGlobal<.72?'var(--red)':'var(--text2)';
+
+    container.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">
+        <div class="kpi"><div class="kpi-label">Pieles registradas</div><div class="kpi-value" style="color:var(--red);">${total}</div><div class="kpi-sub">hoy</div></div>
+        <div class="kpi"><div class="kpi-label">Rendimiento global</div><div class="kpi-value" style="color:${rendCol};">${(rendGlobal*100).toFixed(1)}%</div><div class="kpi-sub">área neta / bruta</div></div>
+      </div>
+      ${Object.entries(byColor).map(([col,d])=>{
+        const rend=d.ab>0?d.an/d.ab:0;
+        const isBlack=col.includes('BLACK');
+        const rc=rend>=.8?'var(--green)':rend<.72?'var(--red)':'var(--text2)';
+        return `<div class="card" style="margin-bottom:12px;border-left:4px solid ${isBlack?'#1f2937':'#92400e'};">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span class="badge ${isBlack?'badge-black':'badge-brown'}">${col}</span>
+            <span class="mono" style="font-size:20px;font-weight:800;color:${rc};">${(rend*100).toFixed(1)}%</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center;">
+            <div><div class="lbl">Pieles</div><div class="mono" style="font-size:18px;font-weight:700;">${d.count}</div></div>
+            <div><div class="lbl">Punteras</div><div class="mono" style="font-size:18px;font-weight:700;">${d.p.toLocaleString()}</div></div>
+            <div><div class="lbl">Cabecitas</div><div class="mono" style="font-size:18px;font-weight:700;">${d.c.toLocaleString()}</div></div>
+          </div>
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px;color:var(--text3);">
+            <div>Área bruta: <strong>${d.ab.toFixed(2)} ft²</strong></div>
+            <div>Área neta: <strong>${d.an.toFixed(2)} ft²</strong></div>
+          </div>
+        </div>`;
+      }).join('')}`;
+  } catch(e) {
+    container.innerHTML = `<div class="note-red">Error al cargar resumen: ${e.message}</div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// SUPERVISOR — LOAD & RENDER
+// ══════════════════════════════════════════════════════════════
+async function loadAndRenderSupervisor() {
+  try { allScans = await SB.get('scans','?select=*&order=fecha.desc'); } catch(e){}
+  if (currentSuperTab==='resumen') renderResumen();
+  if (currentSuperTab==='ordenes') renderOrdenes();
+  if (currentSuperTab==='operadores') renderOperadores();
+  if (currentSuperTab==='escaneos') renderEscaneos();
+  if (currentSuperTab==='programa') await renderPrograma();
+}
+
+function supTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ['resumen','ordenes','operadores','escaneos','programa'].forEach(t=>{
+    const el=document.getElementById('sup-'+t);
+    if(el) el.style.display = t===name?'block':'none';
+  });
+  currentSuperTab = name;
+  loadAndRenderSupervisor();
+}
+
+// ── Resumen ─────────────────────────────────────────────────────
+function renderResumen() {
+  const totAN=allScans.reduce((a,b)=>a+b.area_neta,0);
+  const totAB=allScans.reduce((a,b)=>a+b.area_bruta,0);
+  const rend=totAB>0?totAN/totAB:0;
+  const totP=allScans.reduce((a,b)=>a+b.punteras,0);
+  const totC=allScans.reduce((a,b)=>a+b.cabecitas,0);
+  const rc=rend>=.8?'var(--green)':rend<.72?'var(--red)':'var(--text2)';
+
+  document.getElementById('kpi-row').innerHTML=[
+    {l:'PIELES ESCANEADAS',v:allScans.length,s:'total registros',c:'var(--red)'},
+    {l:'RENDIMIENTO GLOBAL',v:(rend*100).toFixed(2)+'%',s:'área neta / bruta',c:rc},
+    {l:'PUNTERAS TOTALES',v:totP.toLocaleString(),s:'unidades',c:'var(--text)'},
+    {l:'CABECITAS TOTALES',v:totC.toLocaleString(),s:'unidades',c:'var(--text)'},
+  ].map(k=>`<div class="kpi"><div class="kpi-label">${k.l}</div><div class="kpi-value" style="color:${k.c};">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
+
+  document.getElementById('order-prog').innerHTML=getAvailableOrders().map(ordId=>{
+    const m=TOMMY_META[ordId]||{};
+    const os=allScans.filter(s=>s.orden===ordId);
+    const tp=os.reduce((a,b)=>a+b.punteras,0), tc=os.reduce((a,b)=>a+b.cabecitas,0);
+    const mp=m.meta_parejas||0;
+    const pctP=mp?Math.min(100,tp/mp*100):0, pctC=mp?Math.min(100,tc/mp*100):0;
+    const isBlack=(m.color||'').includes('BLACK');
+    return `<div style="margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="mono" style="font-size:15px;font-weight:800;color:var(--red);">${ordId}</span>
+          <span class="badge ${isBlack?'badge-black':'badge-brown'}">${m.color||''}</span>
+          <span style="font-size:11px;color:var(--text3);">${os.length} pieles · ${m.cliente||''}</span>
+        </div>
+        <span class="mono" style="font-size:10px;color:var(--text3);">Vence: ${m.exdate||''}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        ${[['PUNTERAS',tp,mp,pctP,'var(--red)'],['CABECITAS',tc,mp,pctC,'var(--blue)']].map(([lbl,done,goal,pct,col])=>`
+          <div><div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <span class="mono" style="font-size:10px;color:var(--text3);">${lbl}: ${done.toLocaleString()} / ${goal.toLocaleString()}</span>
+            <span class="mono" style="font-size:10px;color:${Math.max(0,goal-done)===0?'var(--green)':'var(--red)'};">−${Math.max(0,goal-done).toLocaleString()}</span>
+          </div>
+          <div class="prog-bg"><div class="prog-fill" style="width:${pct}%;background:${pct>=100?'var(--green)':col};"></div></div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Órdenes ──────────────────────────────────────────────────────
+function renderOrdenes() {
+  document.getElementById('tbody-orders').innerHTML=getAvailableOrders().map(ordId=>{
+    const m=TOMMY_META[ordId]||{};
+    const os=allScans.filter(s=>s.orden===ordId);
+    const tp=os.reduce((a,b)=>a+b.punteras,0), tc=os.reduce((a,b)=>a+b.cabecitas,0);
+    const tan=os.reduce((a,b)=>a+b.area_neta,0), tab=os.reduce((a,b)=>a+b.area_bruta,0);
+    const rend=tab>0?tan/tab:0;
+    const rc=rend>=.8?'var(--green)':rend<.72&&rend>0?'var(--red)':'var(--text2)';
+    const mp=m.meta_parejas||0;
+    const isBlack=(m.color||'').includes('BLACK');
+    const pctP=mp?Math.min(100,tp/mp*100):0, pctC=mp?Math.min(100,tc/mp*100):0;
+    return `<tr>
+      <td class="mono" style="font-weight:700;color:var(--red);">${ordId}</td>
+      <td><span class="badge ${isBlack?'badge-black':'badge-brown'}">${m.color||'—'}</span></td>
+      <td class="mono" style="color:var(--text3);">${m.cliente||'—'}</td>
+      <td class="mono">${os.length}</td>
+      <td class="mono">${tp.toLocaleString()}</td>
+      <td class="mono" style="color:var(--text3);">${mp.toLocaleString()}</td>
+      <td class="mono">${tc.toLocaleString()}</td>
+      <td class="mono" style="color:var(--text3);">${mp.toLocaleString()}</td>
+      <td class="mono">${tan.toFixed(2)}</td>
+      <td>${os.length>0?`<div class="rend-bar"><div class="prog-bg"><div class="prog-fill" style="width:${Math.min(100,rend*125)}%;background:${rc};"></div></div><span class="mono" style="font-size:12px;font-weight:700;color:${rc};min-width:46px;">${(rend*100).toFixed(1)}%</span></div>`:'<span style="color:var(--text3);">—</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Operadores ────────────────────────────────────────────────────
+function renderOperadores() {
+  const ops=[...new Set(allScans.map(s=>String(s.operador)))];
+  const stats=ops.map(op=>{
+    const os=allScans.filter(s=>String(s.operador)===op);
+    const tp=os.reduce((a,b)=>a+b.punteras,0), tc=os.reduce((a,b)=>a+b.cabecitas,0);
+    const tan=os.reduce((a,b)=>a+b.area_neta,0), tab=os.reduce((a,b)=>a+b.area_bruta,0);
+    return{op,count:os.length,tp,tc,tan,tab,rend:tab>0?tan/tab:0};
+  }).sort((a,b)=>b.rend-a.rend);
+  document.getElementById('tbody-ops').innerHTML=stats.length?stats.map(({op,count,tp,tc,tan,tab,rend},i)=>{
+    const rc=rend>=.8?'var(--green)':rend<.72?'var(--red)':'var(--text2)';
+    return `<tr>
+      <td class="mono" style="color:var(--text3);">${i+1}</td>
+      <td class="mono" style="font-weight:700;color:var(--red);">${op}</td>
+      <td class="mono">${count}</td>
+      <td class="mono">${tp.toLocaleString()}</td>
+      <td class="mono">${tc.toLocaleString()}</td>
+      <td class="mono">${tan.toFixed(2)}</td>
+      <td class="mono">${tab.toFixed(2)}</td>
+      <td><div class="rend-bar"><div class="prog-bg"><div class="prog-fill" style="width:${Math.min(100,rend*125)}%;background:${rc};"></div></div><span class="mono" style="font-size:12px;font-weight:700;color:${rc};min-width:46px;">${(rend*100).toFixed(1)}%</span></div></td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="8" style="padding:32px;text-align:center;color:var(--text3);">Sin registros aún</td></tr>`;
+}
+
+// ── Escaneos ──────────────────────────────────────────────────────
+function renderEscaneos() {
+  const orders=[...new Set(allScans.map(s=>s.orden))];
+  const ops=[...new Set(allScans.map(s=>String(s.operador)))];
+  const selOrd=document.getElementById('flt-ord'), selOp=document.getElementById('flt-op');
+  const curOrd=selOrd.value, curOp=selOp.value;
+  selOrd.innerHTML='<option value="">Todas las órdenes</option>'+orders.map(o=>`<option value="${o}"${o===curOrd?' selected':''}>${o}</option>`).join('');
+  selOp.innerHTML='<option value="">Todos los operadores</option>'+ops.map(o=>`<option value="${o}"${o===curOp?' selected':''}>${o}</option>`).join('');
+  const q=(document.getElementById('flt-q').value||'').trim();
+  const filtered=allScans.filter(s=>
+    (!curOrd||s.orden===curOrd)&&(!curOp||String(s.operador)===curOp)&&(!q||String(s.etiqueta).includes(q)));
+  document.getElementById('scan-lbl').textContent=`${filtered.length} registros`;
+
+  document.getElementById('tbody-scans').innerHTML=filtered.length?filtered.map(s=>{
+    const rend=s.rendimiento||0;
+    const high=rend>=.8, low=rend<.72;
+    const rc=high?'var(--green)':low?'var(--red)':'var(--text2)';
+    const rowClass=high?'row-green':low?'row-red':'';
+    const isBlack=(s.color||'').includes('BLACK');
+    const dt=new Date(s.fecha);
+    return `<tr class="${rowClass}">
+      <td class="mono" style="font-weight:700;color:var(--red);">${s.etiqueta}</td>
+      <td class="mono">${s.operador}</td>
+      <td class="mono" style="color:var(--blue);">${s.orden}</td>
+      <td><span class="badge ${isBlack?'badge-black':'badge-brown'}">${s.color||'—'}</span></td>
+      <td class="mono">${s.punteras.toLocaleString()}</td>
+      <td class="mono">${s.cabecitas.toLocaleString()}</td>
+      <td class="mono" style="color:var(--text3);">${s.area_bruta.toFixed(2)}</td>
+      <td class="mono" style="color:var(--text3);">${s.area_neta.toFixed(3)}</td>
+      <td><span class="mono" style="font-weight:700;color:${rc};">${(rend*100).toFixed(1)}%${high?' ⬆':low?' ⬇':''}</span></td>
+      <td class="mono" style="color:var(--text3);font-size:10px;">${dt.toLocaleDateString('es-GT')} ${dt.toLocaleTimeString('es-GT',{hour:'2-digit',minute:'2-digit'})}</td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="10" style="padding:32px;text-align:center;color:var(--text3);">Sin registros</td></tr>`;
+}
+
+// ── Programa ──────────────────────────────────────────────────────
+async function renderPrograma() {
+  // Inventory status
+  let inv = [];
+  try { inv = await SB.get('hide_inventory','?select=etiqueta,orden_id'); } catch(e){}
+  const invByOrder={};
+  inv.forEach(h=>{ invByOrder[h.orden_id]=(invByOrder[h.orden_id]||0)+1; });
+
+  document.getElementById('inv-status').innerHTML=`
+    <div class="lbl" style="margin-bottom:10px;">${inv.length>0?'✅ INVENTARIO EN BD':'📋 INVENTARIO INTEGRADO EN APP'} · ${Object.keys(TOMMY_META).length} ÓRDENES</div>
+    ${getAvailableOrders().map(o=>{
+      const m=TOMMY_META[o]||{};
+      const isBlack=(m.color||'').includes('BLACK');
+      const cnt=invByOrder[o]||Object.values(HIDE_DB).filter(h=>h.o===o).length;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);">
+        <span class="mono" style="color:var(--red);font-size:12px;font-weight:700;">${o}</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span class="badge ${isBlack?'badge-black':'badge-brown'}">${m.color||''}</span>
+          <span class="mono" style="font-size:10px;color:var(--text3);">${cnt} pieles</span>
+        </div>
+      </div>`;
+    }).join('')}`;
+
+  // Full program table
+  const allOrders=Object.keys(ALL_PROG).sort();
+  const tommySet=new Set(Object.keys(TOMMY_META));
+  document.getElementById('tbody-prog').innerHTML=allOrders.map(ordId=>{
+    const m=ALL_PROG[ordId]||{};
+    const isTommy=tommySet.has(ordId);
+    const os=allScans.filter(s=>s.orden===ordId);
+    const hideCnt=Object.values(HIDE_DB).filter(h=>h.o===ordId).length+(invByOrder[ordId]||0);
+    const isBlack=(m.color||'').includes('BLACK');
+    return `<tr style="${isTommy?'background:#fff0f0;':''}">
+      <td class="mono" style="font-weight:700;color:${isTommy?'var(--red)':'var(--text3)'};">${ordId}</td>
+      <td class="mono" style="font-size:10px;color:var(--text3);">${m.estilo||'—'}</td>
+      <td>${m.color?`<span class="badge ${isBlack?'badge-black':'badge-brown'}">${m.color}</span>`:'—'}</td>
+      <td class="mono" style="color:var(--text3);">${m.cliente||'—'}</td>
+      <td class="mono">${(m.qty||0).toLocaleString()}</td>
+      <td class="mono" style="color:var(--text3);">${m.exdate||'—'}</td>
+      <td class="mono" style="color:${hideCnt>0?'var(--green)':'var(--text3)'};">${hideCnt>0?hideCnt+' pieles':'—'}</td>
+      <td class="mono" style="color:${os.length>0?'var(--red)':'var(--text3)'};">${os.length>0?os.length:'—'}</td>
+      <td><span class="badge ${isTommy?'badge-red':'badge-gray'}">${isTommy?'● ACTIVA':'○ PENDIENTE'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// UPLOAD PROAKTIV
+// ══════════════════════════════════════════════════════════════
+const TOMMY_SET = new Set(Object.keys(TOMMY_META));
+let uCols=[], uRows=[];
+
+function handleUpload(input) {
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try {
+      const wb=XLSX.read(e.target.result,{type:'binary'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      if(data.length<2){showAlert('error','Archivo vacío',true);return;}
+      uCols=data[0].map(c=>String(c));
+      uRows=data.slice(1);
+      document.getElementById('upload-result').innerHTML=`
+        <div class="card-sm">
+          <div class="lbl">Archivo: ${file.name}</div>
+          <div style="font-size:13px;margin-bottom:10px;">📊 ${uRows.length} filas · ${uCols.length} columnas</div>
+          <div class="mono" style="font-size:10px;color:var(--text3);margin-bottom:12px;">${uCols.slice(0,6).join(' · ')}${uCols.length>6?'…':''}</div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-primary" onclick="autoProcess()">🔍 Auto-detectar →</button>
+            <button class="btn btn-secondary" onclick="showMapPanel()">⚙️ Mapeo manual</button>
+          </div>
+        </div>`;
+    } catch(err){showAlert('error','Error leyendo archivo: '+err.message);}
+  };
+  reader.readAsBinaryString(file);
+}
+
+function autoProcess(){
+  const cols=uCols.map(c=>c.toLowerCase());
+  const find=kws=>{for(const kw of kws){const i=cols.findIndex(c=>c.includes(kw));if(i>=0)return i;}return -1;};
+  const etiqCol=find(['etiqueta','hide','tag','codigo','piel']);
+  const ordCol=find(['orden despacho','despacho','dispatch','orden','order']);
+  const descCol=find(['descripcion','description','material','desc']);
+  const medCol=find(['medida','measure','area','piesaje','ft']);
+  if(etiqCol<0){showAlert('error','No se encontró columna de etiqueta. Usa mapeo manual.');showMapPanel();return;}
+  processData(etiqCol,ordCol,descCol,medCol);
+}
+
+async function processData(etiqCol,ordCol,descCol,medCol){
+  let matched=0,total=0;
+  const toSave=[], ordersFound=new Set();
+  uRows.forEach(row=>{
+    const etiq=String(row[etiqCol]||'').trim();
+    if(!etiq||!/^\d{7,9}$/.test(etiq))return;
+    total++;
+    const orden=ordCol>=0?String(row[ordCol]||'').trim():'';
+    if(TOMMY_SET.has(orden)){
+      matched++;ordersFound.add(orden);
+      toSave.push({etiqueta:parseInt(etiq),orden_id:orden,
+        medida:medCol>=0?parseFloat(row[medCol])||0:0,
+        descripcion:descCol>=0?String(row[descCol]||'').slice(0,55):'',
+        semana_carga:new Date().toISOString().slice(0,10)});
+    }
+  });
+  try {
+    if(toSave.length) await SB.upsert('hide_inventory',toSave);
+    document.getElementById('upload-result').innerHTML+=`
+      <div class="note-green" style="margin-top:12px;">
+        ✅ ${matched} pieles Tommy · ${ordersFound.size} órdenes · ${total} filas procesadas
+      </div>`;
+    showAlert('success',`✅ ${matched} pieles cargadas al inventario`);
+    await renderPrograma();
+  } catch(e){showAlert('error','Error guardando inventario: '+e.message);}
+}
+
+function showMapPanel(){
+  const p=document.getElementById('map-panel');p.style.display='block';
+  document.getElementById('map-form').innerHTML=
+    ['Columna ETIQUETA','Columna ORDEN DESPACHO','Columna DESCRIPCIÓN','Columna MEDIDA/ÁREA'].map((lbl,i)=>`
+      <div><label class="lbl">${lbl}</label>
+        <select id="mc${i}" class="inp" style="padding:8px;">
+          <option value="-1">— No usar —</option>
+          ${uCols.map((c,j)=>`<option value="${j}">${c||'Col '+(j+1)}</option>`).join('')}
+        </select></div>`).join('');
+}
+async function applyMap(){
+  const e=parseInt(document.getElementById('mc0').value);
+  if(e<0){showAlert('error','Selecciona la columna de etiqueta');return;}
+  document.getElementById('map-panel').style.display='none';
+  await processData(e,parseInt(document.getElementById('mc1').value),parseInt(document.getElementById('mc2').value),parseInt(document.getElementById('mc3').value));
+}
+
+// Drag & drop
+const dz=document.getElementById('drop-zone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+dz.addEventListener('drop',e=>{
+  e.preventDefault();dz.classList.remove('dragover');
+  const file=e.dataTransfer.files[0];
+  if(file){const inp=document.getElementById('file-in');const dt=new DataTransfer();dt.items.add(file);inp.files=dt.files;handleUpload(inp);}
+});
+
+// ══════════════════════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════════════════════
+function exportCSV(){
+  if(!allScans.length){showAlert('warn','Sin datos para exportar');return;}
+  const h=['Etiqueta','Operador','Orden','Color','Punteras','Cabecitas','AreaBruta','AreaNeta','Rendimiento(%)','Fecha'];
+  const rows=allScans.map(s=>[s.etiqueta,s.operador,s.orden,s.color,s.punteras,s.cabecitas,s.area_bruta.toFixed(4),s.area_neta.toFixed(4),(s.rendimiento*100).toFixed(2),new Date(s.fecha).toLocaleString('es-GT')]);
+  const csv=[h,...rows].map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='tommy_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  showAlert('success','CSV exportado');
+}
+function exportXLSX(){
+  if(!allScans.length){showAlert('warn','Sin datos para exportar');return;}
+  const rows=allScans.map(s=>({Etiqueta:s.etiqueta,Operador:s.operador,Orden:s.orden,Color:s.color,Punteras:s.punteras,Cabecitas:s.cabecitas,'Area Bruta':s.area_bruta,'Area Neta':s.area_neta,'Rendimiento %':parseFloat((s.rendimiento*100).toFixed(2)),Fecha:new Date(s.fecha).toLocaleString('es-GT')}));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Escaneos');
+  XLSX.writeFile(wb,'tommy_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  showAlert('success','Excel exportado');
+}
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+showScreen('s-login');
+setTimeout(() => document.getElementById('inp-op').focus(), 200);
+</script>
