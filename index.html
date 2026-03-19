@@ -1321,8 +1321,21 @@ async function renderPrograma() {
 // ══════════════════════════════════════════════════════════════
 // UPLOAD PROAKTIV
 // ══════════════════════════════════════════════════════════════
-const TOMMY_SET = new Set(Object.keys(TOMMY_META));
+let TOMMY_SET = new Set();
 let uCols=[], uRows=[];
+  async function refreshTommySetFromSupabase() {
+  try {
+    const rows = await SB.get('orders', '?select=orden_id');
+    TOMMY_SET = new Set(
+      rows
+        .map(r => String(r.orden_id || '').trim().toUpperCase())
+        .filter(Boolean)
+    );
+  } catch (e) {
+    console.error('Error cargando órdenes desde Supabase:', e);
+    showAlert('error', 'No se pudieron cargar las órdenes desde Supabase: ' + e.message);
+  }
+}
 
 function handleUpload(input) {
   const file=input.files[0]; if(!file) return;
