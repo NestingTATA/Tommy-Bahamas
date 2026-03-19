@@ -1384,7 +1384,11 @@ function autoProcess(){
   const cols=uCols.map(c=>c.toLowerCase());
   const find=kws=>{for(const kw of kws){const i=cols.findIndex(c=>c.includes(kw));if(i>=0)return i;}return -1;};
   const etiqCol=find(['etiqueta','hide','tag','codigo','piel']);
-  const ordCol=find(['orden despacho','despacho','dispatch','orden','order']);
+  const ordCol = find([
+  'orden despacho',
+  'despacho',
+  'dispatch'
+]);
   const descCol=find(['descripcion','description','material','desc']);
   const medCol=find(['medida','measure','area','piesaje','ft']);
   if(etiqCol<0){showAlert('error','No se encontró columna de etiqueta. Usa mapeo manual.');showMapPanel();return;}
