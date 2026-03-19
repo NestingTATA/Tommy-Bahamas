@@ -785,23 +785,32 @@ function closeBlockScreen() {
 // ══════════════════════════════════════════════════════════════
 // LOGIN
 // ══════════════════════════════════════════════════════════════
-function doLogin() {
+async function doLogin() {
   const v = document.getElementById('inp-op').value.trim();
-  if (!v || v.length < 3) { showAlert('error','❌ Ingresa un código válido (mínimo 3 caracteres)'); return; }
+  if (!v || v.length < 3) {
+    showAlert('error','❌ Ingresa un código válido (mínimo 3 caracteres)');
+    return;
+  }
+
   currentOp = v;
+
+  await refreshTommySetFromSupabase();
+
   document.getElementById('so-op-name').textContent = v;
   document.getElementById('main-header').style.display = 'flex';
   document.getElementById('header-right').innerHTML = `
     <span class="mono" style="font-size:11px;color:var(--text3);">OP: <strong style="color:var(--red);">${v}</strong></span>`;
+
   renderOrdersList();
   showScreen('s-order');
 }
-document.getElementById('inp-op').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
 // ══════════════════════════════════════════════════════════════
 // ORDER SELECTION
 // ══════════════════════════════════════════════════════════════
-function getAvailableOrders() { return Object.keys(TOMMY_META).sort(); }
+function getAvailableOrders() {
+  return Array.from(TOMMY_SET).sort();
+}
 
 function renderOrdersList() {
   const container = document.getElementById('orders-list');
