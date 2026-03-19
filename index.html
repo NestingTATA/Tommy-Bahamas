@@ -957,37 +957,54 @@ async function doScan() {
   } catch(e) { showAlert('warn','Sin conexión — no se pudo verificar duplicado'); }
 
   // Check belongs to current order
-  const hideInfo = HIDE_DB[code] || null;
-  if (hideInfo) {
-    if (hideInfo.o !== currentOrder) {
-      shake(); showAlert('error', `🚫 Piel ${code} pertenece a la orden ${hideInfo.o}, no a ${currentOrder}. ¡Escaneo bloqueado!`, 6000);
-      return;
-    }
-  } else {
-    showAlert('warn', `⚠️ Piel ${code} no está en el inventario cargado. Verifica antes de continuar.`, 4000);
+ let hideInfo = null;
+try {
+  hideInfo = (await SB.get(
+    'hide_inventory',
+    `?etiqueta=eq.${code}&select=etiqueta,orden_id,medida,descripcion`
+  ))[0] || null;
+} catch(e) {
+  showAlert('error', 'Error consultando inventario: ' + e.message);
+  return;
+}
+ if (hideInfo) {
+  if (hideInfo.orden_id !== currentOrder) {
+    shake();showAlert('error', `🚫 Piel ${code} pertenece a la orden ${hideInfo.orden_id}, no a ${currentOrder}. ¡Escaneo bloqueado!`, 6000);
+    return;
   }
+} else {
+  showAlert('warn', `⚠️ Piel ${code} no está en el inventario cargado. Verifica antes de continuar.`, 4000);
+}
 
-  currentEtiqueta = code;
-  const meta = TOMMY_META[currentOrder] || {};
-  let scans = [];
-  try { scans = await SB.get('scans', `?orden=eq.${currentOrder}&select=punteras,cabecitas`); } catch(e){}
-  const totP = scans.reduce((a,b)=>a+b.punteras,0);
-  const totC = scans.reduce((a,b)=>a+b.cabecitas,0);
+currentEtiqueta = code;
 
-  // Pre-fill area
-  const medida = hideInfo?.m || 0;
-  document.getElementById('fp').value = '';
-  document.getElementById('fc').value = '';
-  document.getElementById('fa').value = medida > 1 ? medida : '';
-  document.getElementById('fa-hint').textContent = medida > 1 ? `📦 Área desde inventario: ${medida} ft²` : '';
-  document.getElementById('rend-prev').style.display = 'none';
-  document.getElementById('rend-warn').style.display = 'none';
+let meta = {};
+try {
+  meta = (await SB.get(
+    'orders',
+    `?orden_id=eq.${currentOrder}&select=orden_id,estilo,color,cliente,qty,meta_parejas`
+  ))[0] || {};
+} catch(e){}
 
-  document.getElementById('frm-tag').textContent = code;
-  document.getElementById('frm-orden').textContent = `Orden: ${currentOrder} · ${meta.color||''}`;
-  document.getElementById('frm-desc').textContent = hideInfo?.d || '';
-  document.getElementById('fp-hint').textContent = `Meta: ${(meta.meta_parejas||0).toLocaleString()} · Registradas: ${totP.toLocaleString()}`;
-  document.getElementById('fc-hint').textContent = `Meta: ${(meta.meta_parejas||0).toLocaleString()} · Registradas: ${totC.toLocaleString()}`;
+let scans = [];
+try { scans = await SB.get('scans', `?orden=eq.${currentOrder}&select=punteras,cabecitas`); } catch(e){}
+const totP = scans.reduce((a,b)=>a+b.punteras,0);
+const totC = scans.reduce((a,b)=>a+b.cabecitas,0);
+
+// Pre-fill area
+const medida = hideInfo?.medida || 0;
+document.getElementById('fp').value = '';
+document.getElementById('fc').value = '';
+document.getElementById('fa').value = medida > 1 ? medida : '';
+document.getElementById('fa-hint').textContent = medida > 1 ? `📦 Área desde inventario: ${medida} ft²` : '';
+document.getElementById('rend-prev').style.display = 'none';
+document.getElementById('rend-warn').style.display = 'none';
+
+document.getElementById('frm-tag').textContent = code;
+document.getElementById('frm-order').textContent = `Orden: ${currentOrder} · ${meta.color||''}`;
+document.getElementById('frm-desc').textContent = hideInfo?.descripcion || '';
+document.getElementById('fp-hint').textContent = `Meta: ${(meta.meta_parejas||0).toLocaleString()} · Registradas: ${totP.toLocaleString()}`;
+document.getElementById('fc-hint').textContent = `Meta: ${(meta.meta_parejas||0).toLocaleString()} · Registradas: ${totC.toLocaleString()}`;
 
   ['fp','fc','fa'].forEach(id => document.getElementById(id).oninput = updatePreview);
   showScreen('s-form');
