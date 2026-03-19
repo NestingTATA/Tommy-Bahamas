@@ -992,22 +992,23 @@ const totP = scans.reduce((a,b)=>a+b.punteras,0);
 const totC = scans.reduce((a,b)=>a+b.cabecitas,0);
 
 // Pre-fill area
-const medida = hideInfo?.medida || 0;
+const medida = Number(hideInfo?.medida || 0);
 document.getElementById('fp').value = '';
 document.getElementById('fc').value = '';
-document.getElementById('fa').value = medida > 1 ? medida : '';
-document.getElementById('fa-hint').textContent = medida > 1 ? `📦 Área desde inventario: ${medida} ft²` : '';
+document.getElementById('fa').value = medida > 0 ? medida.toFixed(4) : '';
+document.getElementById('fa-hint').textContent = medida > 0 ? `📦 Área desde inventario: ${medida.toFixed(4)} ft²` : '';
 document.getElementById('rend-prev').style.display = 'none';
 document.getElementById('rend-warn').style.display = 'none';
 
 document.getElementById('frm-tag').textContent = code;
 document.getElementById('frm-orden').textContent = `Orden: ${currentOrder} · ${meta.color||''}`;
 document.getElementById('frm-desc').textContent = hideInfo?.descripcion || '';
-document.getElementById('fp-hint').textContent = `Meta: ${(meta.meta_parejas||0).toLocaleString()} · Registradas: ${totP.toLocaleString()}`;
-document.getElementById('fc-hint').textContent = `Meta: ${(meta.meta_parejas||0).toLocaleString()} · Registradas: ${totC.toLocaleString()}`;
+document.getElementById('fp-hint').textContent = `Meta: ${(meta.meta_parejas||meta.qty||0).toLocaleString()} · Registradas: ${totP.toLocaleString()}`;
+document.getElementById('fc-hint').textContent = `Meta: ${(meta.meta_parejas||meta.qty||0).toLocaleString()} · Registradas: ${totC.toLocaleString()}`;
 
-  ['fp','fc','fa'].forEach(id => document.getElementById(id).oninput = updatePreview);
-  showScreen('s-form');
+['fp','fc','fa'].forEach(id => document.getElementById(id).oninput = updatePreview);
+updatePreview();
+showScreen('s-form');
 }
 document.getElementById('inp-scan').addEventListener('keydown', e => { if(e.key==='Enter') doScan(); });
 
