@@ -1069,18 +1069,25 @@ async function doSubmit() {
   // HARD BLOCK: rendimiento > 100%
   if (rend > 1.0) { showBlockScreen(rend); return; }
 
-  const meta = TOMMY_META[currentOrder]||{};
-  const rec = {
-    etiqueta: parseInt(currentEtiqueta),
-    operador: currentOp,
-    orden: currentOrder,
-    color: meta.color||'',
-    punteras: p,
-    cabecitas: c,
-    area_bruta: parseFloat(ab.toFixed(4)),
-    area_neta: parseFloat(an.toFixed(6)),
-    rendimiento: parseFloat(rend.toFixed(6))
-  };
+let meta = {};
+try {
+  meta = (await SB.get(
+    'orders',
+    `?orden_id=eq.${currentOrder}&select=orden_id,estilo,color,cliente,qty,meta_parejas`
+  ))[0] || {};
+} catch(e){}
+
+const rec = {
+  etiqueta: parseInt(currentEtiqueta),
+  operador: currentOp,
+  orden: currentOrder,
+  color: meta.color||'',
+  punteras: p,
+  cabecitas: c,
+  area_bruta: parseFloat(ab.toFixed(4)),
+  area_neta: parseFloat(an.toFixed(6)),
+  rendimiento: parseFloat(rend.toFixed(6))
+};Así
 
   const btn = document.getElementById('btn-submit');
   btn.disabled = true;
@@ -1088,6 +1095,12 @@ async function doSubmit() {
 
   try {
     await SB.post('scans', rec);
+
+    await fetch(`${SUPABASE_URL}/rest/v1/hide_inventory?etiqueta=eq.${currentEtiqueta}`, {
+  method: 'DELETE',
+  headers: SB.headers
+});
+    
     const col = rend>=.8?'var(--green)':rend<.72?'var(--red)':'var(--text2)';
     document.getElementById('last-scanned').style.display = 'block';
     document.getElementById('ls-tag').textContent = currentEtiqueta;
@@ -1100,9 +1113,9 @@ async function doSubmit() {
     const mp = meta.meta_parejas||0;
     document.getElementById('ls-det').textContent = `P:${p} · C:${c} · Área neta:${an.toFixed(3)} · Faltan P:${Math.max(0,mp-totP).toLocaleString()} C:${Math.max(0,mp-totC).toLocaleString()}`;
     currentEtiqueta = '';
-    await renderScanPanel();
     showAlert('success', `✅ Piel registrada · Rend: ${(rend*100).toFixed(1)}% · Faltan P:${Math.max(0,mp-totP).toLocaleString()} C:${Math.max(0,mp-totC).toLocaleString()}`, 4000);
     showScreen('s-scan');
+    await renderScanPanel();
     setTimeout(() => document.getElementById('inp-scan').focus(), 250);
   } catch(e) {
     showAlert('error', '❌ Error al guardar: '+e.message);
