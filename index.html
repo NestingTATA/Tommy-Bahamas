@@ -836,7 +836,7 @@ function renderOrdersList() {
   });
 }
 
-function doSelectOrder() {
+async function doSelectOrder() {
   const v = document.getElementById('inp-order').value.trim().toUpperCase();
   const errEl = document.getElementById('so-error');
   if (!v) { errEl.textContent='Escribe el número de orden'; errEl.style.display='block'; return; }
@@ -846,11 +846,10 @@ function doSelectOrder() {
   }
   errEl.style.display = 'none';
   currentOrder = v;
-  renderScanPanel().then(() => {
-    showScreen('s-scan');
-    showAlert('success', `✅ Orden ${v} activada — ${TOMMY_META[v]?.color||''} · Meta: ${(TOMMY_META[v]?.meta_parejas||0).toLocaleString()} parejas`, 3000);
-    setTimeout(() => document.getElementById('inp-scan').focus(), 350);
-  });
+ await renderScanPanel();
+showScreen('s-scan');
+showAlert('success', `✅ Orden ${v} activada`, 3000);
+setTimeout(() => document.getElementById('inp-scan').focus(), 350);
 }
 document.getElementById('inp-order').addEventListener('keydown', e => { if(e.key==='Enter') doSelectOrder(); });
 
