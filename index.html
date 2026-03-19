@@ -1337,29 +1337,46 @@ let uCols=[], uRows=[];
   }
 }
 
-function handleUpload(input) {
-  const file=input.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=e=>{
+async function handleUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  await refreshTommySetFromSupabase();
+
+  const reader = new FileReader();
+  reader.onload = e => {
     try {
-      const wb=XLSX.read(e.target.result,{type:'binary'});
-      const ws=wb.Sheets[wb.SheetNames[0]];
-      const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      if(data.length<2){showAlert('error','Archivo vacío',true);return;}
-      uCols=data[0].map(c=>String(c));
-      uRows=data.slice(1);
-      document.getElementById('upload-result').innerHTML=`
+      const wb = XLSX.read(e.target.result, { type:'binary' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+
+      if (data.length < 2) {
+        showAlert('error', 'Archivo vacío', true);
+        return;
+      }
+
+      uCols = data[0].map(c => String(c).trim());
+      uRows = data.slice(1);
+
+      document.getElementById('upload-result').innerHTML = `
         <div class="card-sm">
           <div class="lbl">Archivo: ${file.name}</div>
-          <div style="font-size:13px;margin-bottom:10px;">📊 ${uRows.length} filas · ${uCols.length} columnas</div>
-          <div class="mono" style="font-size:10px;color:var(--text3);margin-bottom:12px;">${uCols.slice(0,6).join(' · ')}${uCols.length>6?'…':''}</div>
+          <div style="font-size:13px;margin-bottom:10px;">
+             ${uRows.length} filas · ${uCols.length} columnas
+          </div>
+          <div class="mono" style="font-size:10px;color:var(--text3);margin-bottom:12px;">
+            ${uCols.slice(0,6).join(' · ')}${uCols.length>6?'…':''}
+          </div>
           <div style="display:flex;gap:8px;">
             <button class="btn btn-primary" onclick="autoProcess()">🔍 Auto-detectar →</button>
             <button class="btn btn-secondary" onclick="showMapPanel()">⚙️ Mapeo manual</button>
           </div>
         </div>`;
-    } catch(err){showAlert('error','Error leyendo archivo: '+err.message);}
+    } catch(err) {
+      showAlert('error', 'Error leyendo archivo: ' + err.message);
+    }
   };
+
   reader.readAsBinaryString(file);
 }
 
