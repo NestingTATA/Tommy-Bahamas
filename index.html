@@ -837,19 +837,34 @@ function renderOrdersList() {
 }
 
 async function doSelectOrder() {
-  const v = document.getElementById('inp-order').value.trim().toUpperCase();
-  const errEl = document.getElementById('so-error');
-  if (!v) { errEl.textContent='Escribe el número de orden'; errEl.style.display='block'; return; }
-  if (!getAvailableOrders().includes(v)) {
-    errEl.innerHTML = `❌ La orden <strong>${v}</strong> no pertenece al programa Tommy Bahamas activo.<br><span style="font-size:11px;">Disponibles: ${getAvailableOrders().join(', ')}</span>`;
-    errEl.style.display='block'; return;
+  try {
+    const v = document.getElementById('inp-order').value.trim().toUpperCase();
+    const errEl = document.getElementById('so-error');
+
+    if (!v) {
+      errEl.textContent = 'Escribe el número de orden';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    if (!getAvailableOrders().includes(v)) {
+      errEl.innerHTML = `❌ La orden <strong>${v}</strong> no pertenece al programa Tommy Bahamas activo.<br><span style="font-size:11px;">Disponibles: ${getAvailableOrders().join(', ')}</span>`;
+      errEl.style.display = 'block';
+      return;
+    }
+
+    errEl.style.display = 'none';
+    currentOrder = v;
+
+    await renderScanPanel();
+    showScreen('s-scan');
+    showAlert('success', `✅ Orden ${v} activada`, 3000);
+    setTimeout(() => document.getElementById('inp-scan').focus(), 350);
+
+  } catch (e) {
+    console.error('Error en doSelectOrder:', e);
+    showAlert('error', 'Error al abrir la orden: ' + e.message, 6000);
   }
-  errEl.style.display = 'none';
-  currentOrder = v;
- await renderScanPanel();
-showScreen('s-scan');
-showAlert('success', `✅ Orden ${v} activada`, 3000);
-setTimeout(() => document.getElementById('inp-scan').focus(), 350);
 }
 document.getElementById('inp-order').addEventListener('keydown', e => { if(e.key==='Enter') doSelectOrder(); });
 
