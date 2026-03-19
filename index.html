@@ -816,7 +816,7 @@ function renderOrdersList() {
   const container = document.getElementById('orders-list');
   container.innerHTML = '';
   getAvailableOrders().forEach(ordId => {
-    const m = TOMMY_META[ordId] || {};
+    const m = ORDERS_CACHE[ordId] || ALL_PROG[ordId] || TOMMY_META[ordId] || {};
     const isBlack = (m.color||'').includes('BLACK');
     const div = document.createElement('div');
     div.style.cssText = 'padding:10px 12px;border-radius:8px;margin-bottom:6px;cursor:pointer;border:1.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;transition:all .15s;background:var(--bg2);';
@@ -830,7 +830,7 @@ function renderOrdersList() {
       </div>
       <div style="display:flex;gap:6px;align-items:center;">
         <span class="badge ${isBlack?'badge-black':'badge-brown'}">${m.color||''}</span>
-        <span class="mono" style="font-size:10px;color:var(--text3);">${(m.meta_parejas||0).toLocaleString()} sets</span>
+        <span class="mono" style="font-size:10px;color:var(--text3);">${(m.meta_parejas||m.qty||0).toLocaleString()} sets</span>
       </div>`;
     container.appendChild(div);
   });
@@ -880,7 +880,7 @@ function goToOrderSelect() {
 // ══════════════════════════════════════════════════════════════
 async function renderScanPanel() {
   let inv = 0;
-  try { inv = (await SB.get('hide_inventory', `?orden_id=eq.${currentOrder}&select=count`))[0]?.count || 0; } catch(e){}
+  try { const invRows = await SB.get('hide_inventory', `?orden_id=eq.${currentOrder}&select=etiqueta`); inv = invRows.length; } catch(e){}
 
   let meta = {};
   try {
@@ -895,7 +895,7 @@ async function renderScanPanel() {
 
   const totP = scans.reduce((a,b)=>a+b.punteras,0);
   const totC = scans.reduce((a,b)=>a+b.cabecitas,0);
-  const mp = meta.meta_parejas||0;
+  const mp = meta.meta_parejas||meta.qty||0;
   const fP = Math.max(0, mp - totP);
   const fC = Math.max(0, mp - totC);
   const pctP = mp ? Math.min(100, totP/mp*100) : 0;
@@ -1001,7 +1001,7 @@ document.getElementById('rend-prev').style.display = 'none';
 document.getElementById('rend-warn').style.display = 'none';
 
 document.getElementById('frm-tag').textContent = code;
-document.getElementById('frm-order').textContent = `Orden: ${currentOrder} · ${meta.color||''}`;
+document.getElementById('frm-orden').textContent = `Orden: ${currentOrder} · ${meta.color||''}`;
 document.getElementById('frm-desc').textContent = hideInfo?.descripcion || '';
 document.getElementById('fp-hint').textContent = `Meta: ${(meta.meta_parejas||0).toLocaleString()} · Registradas: ${totP.toLocaleString()}`;
 document.getElementById('fc-hint').textContent = `Meta: ${(meta.meta_parejas||0).toLocaleString()} · Registradas: ${totC.toLocaleString()}`;
@@ -1087,7 +1087,7 @@ const rec = {
   area_bruta: parseFloat(ab.toFixed(4)),
   area_neta: parseFloat(an.toFixed(6)),
   rendimiento: parseFloat(rend.toFixed(6))
-};Así
+};
 
   const btn = document.getElementById('btn-submit');
   btn.disabled = true;
@@ -1096,10 +1096,11 @@ const rec = {
   try {
     await SB.post('scans', rec);
 
-    await fetch(`${SUPABASE_URL}/rest/v1/hide_inventory?etiqueta=eq.${currentEtiqueta}`, {
-  method: 'DELETE',
-  headers: SB.headers
-});
+    const delResp = await fetch(`${SUPABASE_URL}/rest/v1/hide_inventory?etiqueta=eq.${currentEtiqueta}`, {
+      method: 'DELETE',
+      headers: { ...SB.headers, 'Prefer':'return=minimal' }
+    });
+    if (!delResp.ok) throw new Error(await delResp.text());
     
     const col = rend>=.8?'var(--green)':rend<.72?'var(--red)':'var(--text2)';
     document.getElementById('last-scanned').style.display = 'block';
@@ -1110,7 +1111,7 @@ const rec = {
     const scans = await SB.get('scans', `?orden=eq.${currentOrder}&select=punteras,cabecitas`);
     const totP = scans.reduce((a,b)=>a+b.punteras,0);
     const totC = scans.reduce((a,b)=>a+b.cabecitas,0);
-    const mp = meta.meta_parejas||0;
+    const mp = meta.meta_parejas||meta.qty||0;
     document.getElementById('ls-det').textContent = `P:${p} · C:${c} · Área neta:${an.toFixed(3)} · Faltan P:${Math.max(0,mp-totP).toLocaleString()} C:${Math.max(0,mp-totC).toLocaleString()}`;
     currentEtiqueta = '';
     showAlert('success', `✅ Piel registrada · Rend: ${(rend*100).toFixed(1)}% · Faltan P:${Math.max(0,mp-totP).toLocaleString()} C:${Math.max(0,mp-totC).toLocaleString()}`, 4000);
@@ -1345,11 +1346,11 @@ async function renderPrograma() {
   inv.forEach(h=>{ invByOrder[h.orden_id]=(invByOrder[h.orden_id]||0)+1; });
 
   document.getElementById('inv-status').innerHTML=`
-    <div class="lbl" style="margin-bottom:10px;">${inv.length>0?'✅ INVENTARIO EN BD':'📋 INVENTARIO INTEGRADO EN APP'} · ${Object.keys(TOMMY_META).length} ÓRDENES</div>
+    <div class="lbl" style="margin-bottom:10px;">${inv.length>0?'✅ INVENTARIO EN BD':'📋 INVENTARIO EN BD'} · ${getAvailableOrders().length} ÓRDENES</div>
     ${getAvailableOrders().map(o=>{
-      const m=TOMMY_META[o]||{};
+      const m=ORDERS_CACHE[o]||ALL_PROG[o]||TOMMY_META[o]||{};
       const isBlack=(m.color||'').includes('BLACK');
-      const cnt=invByOrder[o]||Object.values(HIDE_DB).filter(h=>h.o===o).length;
+      const cnt=invByOrder[o]||0;
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);">
         <span class="mono" style="color:var(--red);font-size:12px;font-weight:700;">${o}</span>
         <div style="display:flex;gap:6px;align-items:center;">
@@ -1361,12 +1362,12 @@ async function renderPrograma() {
 
   // Full program table
   const allOrders=Object.keys(ALL_PROG).sort();
-  const tommySet=new Set(Object.keys(TOMMY_META));
+  const tommySet=new Set(getAvailableOrders());
   document.getElementById('tbody-prog').innerHTML=allOrders.map(ordId=>{
     const m=ALL_PROG[ordId]||{};
     const isTommy=tommySet.has(ordId);
     const os=allScans.filter(s=>s.orden===ordId);
-    const hideCnt=Object.values(HIDE_DB).filter(h=>h.o===ordId).length+(invByOrder[ordId]||0);
+    const hideCnt=invByOrder[ordId]||0;
     const isBlack=(m.color||'').includes('BLACK');
     return `<tr style="${isTommy?'background:#fff0f0;':''}">
       <td class="mono" style="font-weight:700;color:${isTommy?'var(--red)':'var(--text3)'};">${ordId}</td>
@@ -1386,15 +1387,21 @@ async function renderPrograma() {
 // UPLOAD PROAKTIV
 // ══════════════════════════════════════════════════════════════
 let TOMMY_SET = new Set();
+let ORDERS_CACHE = {};
 let uCols=[], uRows=[];
   async function refreshTommySetFromSupabase() {
   try {
-    const rows = await SB.get('orders', '?select=orden_id');
+    const rows = await SB.get('orders', '?select=orden_id,estilo,color,cliente,qty,meta_parejas,exdate');
     TOMMY_SET = new Set(
       rows
         .map(r => String(r.orden_id || '').trim().toUpperCase())
         .filter(Boolean)
     );
+    ORDERS_CACHE = {};
+    rows.forEach(r => {
+      const id = String(r.orden_id || '').trim().toUpperCase();
+      if (id) ORDERS_CACHE[id] = r;
+    });
   } catch (e) {
     console.error('Error cargando órdenes desde Supabase:', e);
     showAlert('error', 'No se pudieron cargar las órdenes desde Supabase: ' + e.message);
