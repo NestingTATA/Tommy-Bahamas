@@ -865,8 +865,8 @@ function goToOrderSelect() {
 // SCAN PANEL
 // ══════════════════════════════════════════════════════════════
 async function renderScanPanel() {
-  let meta = {};
-try { meta = (await SB.get('orders', `?orden_id=eq.${currentOrder}&select=orden_id,estilo,color,cliente,qty,meta_parejas`))[0] || {}; } catch(e){}
+  let inv = 0;
+try { inv = (await SB.get('hide_inventory', `?orden_id=eq.${currentOrder}&select=count`))[0]?.count || 0; } catch(e){}
   let scans = [];
   try { scans = await SB.get('scans', `?orden=eq.${currentOrder}&select=punteras,cabecitas,rendimiento`); } catch(e){}
   const totP = scans.reduce((a,b)=>a+b.punteras,0);
