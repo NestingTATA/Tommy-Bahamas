@@ -967,13 +967,16 @@ try {
   showAlert('error', 'Error consultando inventario: ' + e.message);
   return;
 }
- if (hideInfo) {
-  if (hideInfo.orden_id !== currentOrder) {
-    shake();showAlert('error', `🚫 Piel ${code} pertenece a la orden ${hideInfo.orden_id}, no a ${currentOrder}. ¡Escaneo bloqueado!`, 6000);
-    return;
-  }
-} else {
-  showAlert('warn', `⚠️ Piel ${code} no está en el inventario cargado. Verifica antes de continuar.`, 4000);
+ if (!hideInfo) {
+  shake();
+  showAlert('error', `❌ Piel ${code} no pertenece al inventario del programa activo`, 6000);
+  return;
+}
+
+if (hideInfo.orden_id !== currentOrder) {
+  shake();
+  showAlert('error', `🚫 Piel ${code} pertenece a la orden ${hideInfo.orden_id}, no a ${currentOrder}. ¡Escaneo bloqueado!`, 6000);
+  return;
 }
 
 currentEtiqueta = code;
