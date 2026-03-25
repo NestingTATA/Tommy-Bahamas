@@ -387,6 +387,7 @@ button:focus,input:focus,select:focus{outline:none;}
     <!-- RESUMEN -->
     <div id="sup-resumen" class="anim-up">
       <div id="kpi-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;"></div>
+      <div id="color-summary" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;"></div>
       <div class="card">
         <div class="lbl" style="margin-bottom:14px;">Progreso por orden</div>
         <div id="order-prog"></div>
@@ -1225,6 +1226,45 @@ function renderResumen() {
     {l:'PUNTERAS TOTALES',v:totP.toLocaleString(),s:'unidades',c:'var(--text)'},
     {l:'CABECITAS TOTALES',v:totC.toLocaleString(),s:'unidades',c:'var(--text)'},
   ].map(k=>`<div class="kpi"><div class="kpi-label">${k.l}</div><div class="kpi-value" style="color:${k.c};">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
+
+  // ── Resumen por color ─────────────────────────────────────────────────────
+  const COLORS = ['BLACK','DARK BROWN'];
+  document.getElementById('color-summary').innerHTML = COLORS.map(col => {
+    const cs = allScans.filter(s => (s.color||'').toUpperCase() === col.toUpperCase());
+    if (!cs.length) return '';
+    const cAN  = cs.reduce((a,b)=>a+b.area_neta, 0);
+    const cAB  = cs.reduce((a,b)=>a+b.area_bruta, 0);
+    const cRend = cAB > 0 ? cAN / cAB : 0;
+    const cP   = cs.reduce((a,b)=>a+b.punteras, 0);
+    const cC   = cs.reduce((a,b)=>a+b.cabecitas, 0);
+    const cRC  = cRend>=.8?'var(--green)':cRend<.72?'var(--red)':'var(--text2)';
+    const isBlack = col === 'BLACK';
+    const accent  = isBlack ? '#1f2937' : '#92400e';
+    const badgeCls = isBlack ? 'badge-black' : 'badge-brown';
+    return `<div class="card" style="border-left:4px solid ${accent};">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="badge ${badgeCls}">${col}</span>
+          <span class="lbl" style="margin-bottom:0;">${cs.length} pieles</span>
+        </div>
+        <div class="mono" style="font-size:26px;font-weight:800;color:${cRC};">${(cRend*100).toFixed(2)}%</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center;padding-top:10px;border-top:1px solid var(--border);">
+        <div>
+          <div class="lbl">PUNTERAS</div>
+          <div class="mono" style="font-size:18px;font-weight:700;">${cP.toLocaleString()}</div>
+        </div>
+        <div>
+          <div class="lbl">CABECITAS</div>
+          <div class="mono" style="font-size:18px;font-weight:700;">${cC.toLocaleString()}</div>
+        </div>
+        <div>
+          <div class="lbl">ÁREA NETA</div>
+          <div class="mono" style="font-size:18px;font-weight:700;">${cAN.toFixed(1)} ft²</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 
   document.getElementById('order-prog').innerHTML=getAvailableOrders().map(ordId=>{
     const m=TOMMY_META[ordId]||{};
